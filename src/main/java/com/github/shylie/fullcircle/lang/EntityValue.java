@@ -40,6 +40,6 @@ public class EntityValue implements Value {
 
     @Override
     public String toString() {
-        return Integer.toString(entityID);
+        return "e: " + Integer.toString(entityID);
     }
 }
