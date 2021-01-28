@@ -570,12 +570,13 @@ public class VM {
                 else if (ev instanceof EntityValue) {
                     Entity entity = event.world.getEntityByID(((EntityValue)ev).entityID);
 
+                    MessageAdditiveMotion motion = new MessageAdditiveMotion(entity.getEntityId(), x.get(), y.get(), z.get());
                     if (entity instanceof ServerPlayerEntity) {
-                        MessageAdditiveMotion motion = new MessageAdditiveMotion(entity.getEntityId(), x.get(), y.get(), z.get());
                         FCPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity)entity), motion);
                     }
                     else {
                         entity.addVelocity(x.get(), y.get(), z.get());
+                        FCPacketHandler.INSTANCE.send(PacketDistributor.ALL.noArg(), motion);
                     }
 
                     return InterpretResult.CONTINUE;
