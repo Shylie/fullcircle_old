@@ -576,7 +576,7 @@ public class VM {
                     }
                     else {
                         entity.addVelocity(x.get(), y.get(), z.get());
-                        FCPacketHandler.INSTANCE.send(PacketDistributor.ALL.noArg(), motion);
+                        FCPacketHandler.INSTANCE.send(PacketDistributor.DIMENSION.with(() -> event.world.getDimensionKey()), motion);
                     }
 
                     return InterpretResult.CONTINUE;
