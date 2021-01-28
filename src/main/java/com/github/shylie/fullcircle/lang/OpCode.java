@@ -48,7 +48,7 @@ public class OpCode {
     public static final int PAUSE = 50;
     /** Light Gray, Brown | ..., EntityValue, NumberValue (3) -&gt; ... */
     public static final int ADD_MOTION = 51;
-    /** Light Gray, Blue | ..., StringValue, NumberValue (3) -&gt; ..., EntityValue */
+    /** Light Gray, Blue | ..., StringValue (2), NumberValue (3) -&gt; ..., EntityValue */
     public static final int SPAWN_ENTITY = 52;
     /** Light Gray, Purple | ..., NumberValue (4) -&gt; ... */
     public static final int CREATE_EXPLOSION = 53;
