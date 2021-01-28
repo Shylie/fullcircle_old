@@ -22,6 +22,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.RayTraceContext;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.RayTraceContext.BlockMode;
 import net.minecraft.util.math.RayTraceContext.FluidMode;
 import net.minecraft.util.math.vector.Vector3d;
@@ -389,9 +390,15 @@ public class VM {
                             null
                         )
                     );
-                    push(new DoubleValue(result.getPos().getX()));
-                    push(new DoubleValue(result.getPos().getY()));
-                    push(new DoubleValue(result.getPos().getZ()));
+                    if (result.getType() == RayTraceResult.Type.MISS) {
+                        push(new LongValue(1));
+                    }
+                    else {
+                        push(new DoubleValue(result.getPos().getX()));
+                        push(new DoubleValue(result.getPos().getY()));
+                        push(new DoubleValue(result.getPos().getZ()));
+                        push(new LongValue(0));
+                    }
                     return InterpretResult.CONTINUE;
                 }
                 else {
@@ -418,9 +425,15 @@ public class VM {
                             null
                         )
                     );
-                    push(new DoubleValue(result.getFace().getXOffset()));
-                    push(new DoubleValue(result.getFace().getYOffset()));
-                    push(new DoubleValue(result.getFace().getZOffset()));
+                    if (result.getType() == RayTraceResult.Type.MISS) {
+                        push(new LongValue(1));
+                    }
+                    else {
+                        push(new DoubleValue(result.getFace().getXOffset()));
+                        push(new DoubleValue(result.getFace().getYOffset()));
+                        push(new DoubleValue(result.getFace().getZOffset()));
+                        push(new LongValue(0));
+                    }
                     return InterpretResult.CONTINUE;
                 }
                 else {
