@@ -160,6 +160,9 @@ public class Chunk {
             case OpCode.ENTITY_LOOKED_AT:
                 return simpleInstruction("OP_RAYCAST_ENTITY", offset);
 
+            case OpCode.ENTITY_NBT:
+                return simpleInstruction("OP_ENTITY_NBT", offset);
+
             case OpCode.ADD_MOTION:
                 return simpleInstruction("OP_ADD_MOTION", offset);
 
@@ -172,8 +175,20 @@ public class Chunk {
             case OpCode.MOVE_BLOCK:
                 return simpleInstruction("OP_MOVE_BLOCK", offset);
 
+            case OpCode.MODIFY_ENTITY_NBT:
+                return simpleInstruction("OP_MODIFY_ENTITY_NBT", offset);
+
             case OpCode.PAUSE:
                 return simpleInstruction("OP_PAUSE", offset);
+
+            case OpCode.NEW_NBT:
+                return simpleInstruction("OP_NEW_NBT", offset);
+
+            case OpCode.NBT_GET:
+                return simpleInstruction("OP_NBT_GET", offset);
+
+            case OpCode.NBT_SET:
+                return simpleInstruction("OP_NBT_SET", offset);
 
             default:
                 LOGGER.debug(String.format("Unknown OpCode '%04d'", instruction));

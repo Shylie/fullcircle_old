@@ -17,6 +17,20 @@ import net.minecraft.block.material.PushReaction;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.nbt.ByteArrayNBT;
+import net.minecraft.nbt.ByteNBT;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.DoubleNBT;
+import net.minecraft.nbt.FloatNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.INBTType;
+import net.minecraft.nbt.IntArrayNBT;
+import net.minecraft.nbt.IntNBT;
+import net.minecraft.nbt.ListNBT;
+import net.minecraft.nbt.LongArrayNBT;
+import net.minecraft.nbt.LongNBT;
+import net.minecraft.nbt.ShortNBT;
+import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
@@ -557,6 +571,23 @@ public class VM {
                 }
             }
 
+            case OpCode.ENTITY_NBT:
+            {
+                Value ev = pop();
+                if (!(ev instanceof EntityValue)) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+                Entity e = event.world.getEntityByID(((EntityValue)ev).entityID);
+                if (e == null) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                CompoundNBT nbt = new CompoundNBT();
+                e.writeUnlessRemoved(nbt);
+                push(new NBTValue(nbt));
+                return InterpretResult.CONTINUE;
+            }
+
             case OpCode.ADD_MOTION:
             {
                 Optional<Double> z = asDouble(pop());
@@ -604,8 +635,12 @@ public class VM {
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
-                    Entity e = ForgeRegistries.ENTITIES.getValue(new ResourceLocation(((StringValue)namespaceValue).value, ((StringValue)pathValue).value)).create(event.world);
-                    e.moveForced(x.get(), y.get(), z.get());
+                    final ResourceLocation resourceLocation = new ResourceLocation(((StringValue)namespaceValue).value, ((StringValue)pathValue).value);
+                    if (!ForgeRegistries.ENTITIES.containsKey(resourceLocation)) {
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+                    Entity e = ForgeRegistries.ENTITIES.getValue(resourceLocation).create(event.world);
+                    e.setPosition(x.get(), y.get(), z.get());
                     event.world.addEntity(e);
                     push(new EntityValue(e.getEntityId()));
                     return InterpretResult.CONTINUE;
@@ -672,6 +707,173 @@ public class VM {
             case OpCode.PAUSE:
             {
                 return InterpretResult.PAUSE;
+            }
+
+            case OpCode.MODIFY_ENTITY_NBT:
+            {
+                Value nbtv = pop();
+                Value ev = pop();
+
+                if (!(ev instanceof EntityValue) || !(nbtv instanceof NBTValue)) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                Entity e = event.world.getEntityByID(((EntityValue)ev).entityID);
+                if (e == null) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                e.read(((NBTValue)nbtv).value);
+
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.NEW_NBT:
+            {
+                push(new NBTValue(new CompoundNBT()));
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.NBT_GET:
+            {
+                Value path = pop();
+                Value nbtv = pop();
+
+                if (!(path instanceof StringValue) || !(nbtv instanceof NBTValue)) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                String[] splitPath = ((StringValue)path).value.split("\\.");
+
+                CompoundNBT nbt = ((NBTValue)nbtv).value;
+                for (int i = 0; i < splitPath.length; i++) {
+                    if (!nbt.contains(splitPath[i])) {
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+
+                    final INBT inbt = nbt.get(splitPath[i]);
+                    final INBTType<?> type = inbt.getType();
+                    
+                    if (type.equals(ByteArrayNBT.TYPE)) {
+                        LOGGER.debug("Array NBT types are not yet supported");
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+                    else if (type.equals(ByteNBT.TYPE)) {
+                        if (i != splitPath.length - 1) {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+
+                        push(new LongValue(((ByteNBT)inbt).getLong()));
+                        return InterpretResult.CONTINUE;
+                    }
+                    else if (type.equals(CompoundNBT.TYPE)) {
+                        nbt = (CompoundNBT)inbt;
+                    }
+                    else if (type.equals(DoubleNBT.TYPE)) {
+                        if (i != splitPath.length - 1) {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+
+                        push(new DoubleValue(((DoubleNBT)inbt).getDouble()));
+                        return InterpretResult.CONTINUE;
+                    }
+                    else if (type.equals(FloatNBT.TYPE)) {
+                        if (i != splitPath.length - 1) {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+
+                        push(new DoubleValue(((FloatNBT)inbt).getDouble()));
+                        return InterpretResult.CONTINUE;
+                    }
+                    else if (type.equals(IntArrayNBT.TYPE)) {
+                        LOGGER.debug("Array NBT types are not yet supported");
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+                    else if (type.equals(IntNBT.TYPE)) {
+                        if (i != splitPath.length - 1) {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+
+                        push(new LongValue(((IntNBT)inbt).getLong()));
+                        return InterpretResult.CONTINUE;
+                    }
+                    else if (type.equals(ListNBT.TYPE)) {
+                        LOGGER.debug("Array NBT types are not yet supported");
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+                    else if (type.equals(LongArrayNBT.TYPE)) {
+                        LOGGER.debug("Array NBT types are not yet supported");
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+                    else if (type.equals(LongNBT.TYPE)) {
+                        if (i != splitPath.length - 1) {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+
+                        push(new LongValue(((LongNBT)inbt).getLong()));
+                        return InterpretResult.CONTINUE;
+                    }
+                    else if (type.equals(ShortNBT.TYPE)) {
+                        if (i != splitPath.length - 1) {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+
+                        push(new LongValue(((ShortNBT)inbt).getLong()));
+                        return InterpretResult.CONTINUE;
+                    }
+                    else if (type.equals(StringNBT.TYPE)) {
+                        if (i != splitPath.length - 1) {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+
+                        push(new StringValue(((StringNBT)inbt).getString()));
+                        return InterpretResult.CONTINUE;
+                    }
+                    else {
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+                }
+
+                push(new NBTValue(nbt));
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.NBT_SET:
+            {
+                Value putv = pop();
+                Value path = pop();
+                Value nbtv = peek(0);
+
+                if (!(path instanceof StringValue) || !(nbtv instanceof NBTValue) || (putv instanceof EntityValue)) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                String[] splitPath = ((StringValue)path).value.split("\\.");
+
+                CompoundNBT nbt = ((NBTValue)nbtv).value;
+
+                for (int i = 0; i < splitPath.length - 1; i++) {
+                    if (!nbt.contains(splitPath[i], 10)) {
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+
+                    nbt = nbt.getCompound(splitPath[i]);
+                }
+
+                if (putv instanceof LongValue) {
+                    nbt.putLong(splitPath[splitPath.length - 1], ((LongValue)putv).value);
+                }
+                else if (putv instanceof DoubleValue) {
+                    nbt.putDouble(splitPath[splitPath.length - 1], ((DoubleValue)putv).value);
+                }
+                else if (putv instanceof StringValue) {
+                    nbt.putString(splitPath[splitPath.length - 1], ((StringValue)putv).value);
+                }
+                else if (putv instanceof NBTValue) {
+                    nbt.put(splitPath[splitPath.length - 1], ((NBTValue)putv).value);
+                }
+
+                return InterpretResult.CONTINUE;
             }
 
             default:

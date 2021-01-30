@@ -258,11 +258,16 @@ public class Compiler {
                 case OpCode.ENTITY_EYE_POS:
                 case OpCode.ENTITY_LOOK:
                 case OpCode.ENTITY_LOOKED_AT:
+                case OpCode.ENTITY_NBT:
                 case OpCode.SPAWN_ENTITY:
                 case OpCode.ADD_MOTION:
                 case OpCode.CREATE_EXPLOSION:
                 case OpCode.MOVE_BLOCK:
                 case OpCode.PAUSE:
+                case OpCode.MODIFY_ENTITY_NBT:
+                case OpCode.NEW_NBT:
+                case OpCode.NBT_GET:
+                case OpCode.NBT_SET:
                     chunk.write(op);
                     reset();
                     break;

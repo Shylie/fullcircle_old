@@ -40,6 +40,8 @@ public class OpCode {
     public static final int ENTITY_LOOK = 32;
     /** Purple, Purple | ..., EntityValue -&gt; ..., EntityValue */
     public static final int ENTITY_LOOKED_AT = 33;
+    /** Purple, Cyan | ..., EntityValue -&gt; ..., NBTValue */
+    public static final int ENTITY_NBT = 34;
 
     /** Cyan, Green | ... -&gt; ..., EntityValue */
     public static final int CASTER = 40;
@@ -54,6 +56,15 @@ public class OpCode {
     public static final int CREATE_EXPLOSION = 53;
     /** Light Gray, Cyan | ..., NumberValue (6) -&gt; ... */
     public static final int MOVE_BLOCK = 54;
+    /** Light Gray, Light Gray | ..., EntityValue, NBTValue -&gt; ... */
+    public static final int MODIFY_ENTITY_NBT = 55;
+
+    /** Gray, Green | ... -&gt; ..., NBTValue */
+    public static final int NEW_NBT = 60;
+    /** Gray, Brown | ..., NBTValue, StringValue -&gt; ..., Value */
+    public static final int NBT_GET = 61;
+    /** Gray, Blue | ..., NBTValue, StringValue, Value -&gt; ..., NBTValue */
+    public static final int NBT_SET = 62;
 
     /** Orange, Green, Unknown, Unknown | ... -&gt; ..., NumberValue */
     public static final int CONSTANT = 90;
