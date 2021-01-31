@@ -851,8 +851,8 @@ public class VM {
 
             case OpCode.NBT_SET:
             {
-                Value putvtype = pop();
                 Value putv = pop();
+                Value putvtype = pop();
                 Value path = pop();
                 Value nbtv = peek(0);
 
