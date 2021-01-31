@@ -851,13 +851,16 @@ public class VM {
 
             case OpCode.NBT_SET:
             {
+                Value putvtype = pop();
                 Value putv = pop();
                 Value path = pop();
                 Value nbtv = peek(0);
 
-                if (!(path instanceof StringValue) || !(nbtv instanceof NBTValue) || (putv instanceof EntityValue)) {
+                if (!(putvtype instanceof StringValue) || !(path instanceof StringValue) || !(nbtv instanceof NBTValue) || (putv instanceof EntityValue)) {
                     return InterpretResult.RUNTIME_ERROR;
                 }
+
+                String puttype = ((StringValue)putvtype).value;
 
                 String[] splitPath = ((StringValue)path).value.split("\\.");
 
@@ -871,17 +874,99 @@ public class VM {
                     nbt = nbt.getCompound(splitPath[i]);
                 }
 
-                if (putv instanceof LongValue) {
-                    nbt.putLong(splitPath[splitPath.length - 1], ((LongValue)putv).value);
-                }
-                else if (putv instanceof DoubleValue) {
-                    nbt.putDouble(splitPath[splitPath.length - 1], ((DoubleValue)putv).value);
-                }
-                else if (putv instanceof StringValue) {
-                    nbt.putString(splitPath[splitPath.length - 1], ((StringValue)putv).value);
-                }
-                else if (putv instanceof NBTValue) {
-                    nbt.put(splitPath[splitPath.length - 1], ((NBTValue)putv).value);
+                switch (puttype.toLowerCase()) {
+                    case "byte":
+                        if (putv instanceof LongValue) {
+                            nbt.putByte(splitPath[splitPath.length - 1], (byte)((LongValue)putv).value);
+                        }
+                        else if (putv instanceof DoubleValue) {
+                            nbt.putByte(splitPath[splitPath.length - 1], (byte)((DoubleValue)putv).value);
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
+                    case "short":
+                        if (putv instanceof LongValue) {
+                            nbt.putShort(splitPath[splitPath.length - 1], (short)((LongValue)putv).value);
+                        }
+                        else if (putv instanceof DoubleValue) {
+                            nbt.putShort(splitPath[splitPath.length - 1], (short)((DoubleValue)putv).value);
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
+                    case "int":
+                        if (putv instanceof LongValue) {
+                            nbt.putInt(splitPath[splitPath.length - 1], (int)((LongValue)putv).value);
+                        }
+                        else if (putv instanceof DoubleValue) {
+                            nbt.putInt(splitPath[splitPath.length - 1], (int)((DoubleValue)putv).value);
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
+                    case "long":
+                        if (putv instanceof LongValue) {
+                            nbt.putLong(splitPath[splitPath.length - 1], (long)((LongValue)putv).value);
+                        }
+                        else if (putv instanceof DoubleValue) {
+                            nbt.putLong(splitPath[splitPath.length - 1], (long)((DoubleValue)putv).value);
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
+                    case "float":
+                        if (putv instanceof LongValue) {
+                            nbt.putFloat(splitPath[splitPath.length - 1], (float)((LongValue)putv).value);
+                        }
+                        else if (putv instanceof DoubleValue) {
+                            nbt.putFloat(splitPath[splitPath.length - 1], (float)((DoubleValue)putv).value);
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
+                    case "double":
+                        if (putv instanceof LongValue) {
+                            nbt.putDouble(splitPath[splitPath.length - 1], (double)((LongValue)putv).value);
+                        }
+                        else if (putv instanceof DoubleValue) {
+                            nbt.putDouble(splitPath[splitPath.length - 1], (double)((DoubleValue)putv).value);
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
+                    case "string":
+                        if (putv instanceof StringValue) {
+                            nbt.putString(splitPath[splitPath.length - 1], ((StringValue)putv).value);
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
+                    case "nbt":
+                        if (putv instanceof NBTValue) {
+                            nbt.put(splitPath[splitPath.length - 1], ((NBTValue)putv).value);
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
+                    default:
+                        return InterpretResult.RUNTIME_ERROR;
                 }
 
                 return InterpretResult.CONTINUE;
@@ -929,7 +1014,10 @@ public class VM {
             return null;
         }
         else {
-            return stack[--stackTop];
+            stackTop--;
+            Value ret = stack[stackTop];
+            stack[stackTop] = null;
+            return ret;
         }
     }
 

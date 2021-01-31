@@ -63,7 +63,7 @@ public class OpCode {
     public static final int NEW_NBT = 60;
     /** Gray, Brown | ..., NBTValue, StringValue -&gt; ..., Value */
     public static final int NBT_GET = 61;
-    /** Gray, Blue | ..., NBTValue, StringValue, Value -&gt; ..., NBTValue */
+    /** Gray, Blue | ..., NBTValue, StringValue, Value, StringValue -&gt; ..., NBTValue */
     public static final int NBT_SET = 62;
 
     /** Orange, Green, Unknown, Unknown | ... -&gt; ..., NumberValue */
