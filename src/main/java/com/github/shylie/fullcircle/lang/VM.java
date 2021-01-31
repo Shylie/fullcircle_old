@@ -65,6 +65,8 @@ public class VM {
     private Chunk chunk;
     private PlayerEntity caster;
 
+    private int delay;
+
     public final DimensionType dimension;
 
     public VM(String[] source, Map<String, String> strings, int cx, int cy, Direction startDirection, PlayerInteractEvent event, DimensionType dimension) {
@@ -77,6 +79,8 @@ public class VM {
         caster = event.getPlayer();
 
         compiled = Compiler.COMPILER.Compile(source, strings, cx, cy, startDirection, event, chunk);
+
+        delay = 0;
     }
 
     public InterpretResult run(WorldTickEvent event) {
@@ -706,7 +710,14 @@ public class VM {
 
             case OpCode.PAUSE:
             {
-                return InterpretResult.PAUSE;
+                Optional<Double> pauseTime = asDouble(pop());
+
+                if (!pauseTime.isPresent()) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                delay += pauseTime.get().intValue();
+                return InterpretResult.CONTINUE;
             }
 
             case OpCode.MODIFY_ENTITY_NBT:
@@ -884,6 +895,12 @@ public class VM {
 
     public PlayerEntity getCaster() {
         return caster;
+    }
+
+    public boolean delay() {
+        boolean ret = delay > 0;
+        if (ret) { delay--; }
+        return ret;
     }
 
     private int readInt() {

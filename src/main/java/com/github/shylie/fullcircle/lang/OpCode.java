@@ -46,7 +46,7 @@ public class OpCode {
     /** Cyan, Green | ... -&gt; ..., EntityValue */
     public static final int CASTER = 40;
 
-    /** Light Gray, Green | ... -&gt; ... */
+    /** Light Gray, Green | ..., NumberValue -&gt; ... */
     public static final int PAUSE = 50;
     /** Light Gray, Brown | ..., EntityValue, NumberValue (3) -&gt; ... */
     public static final int ADD_MOTION = 51;

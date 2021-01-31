@@ -300,10 +300,7 @@ public class FCEventSubscriber {
                 boolean stop = false;
                 switch (vms.get(i).run(event)) {
                     case CONTINUE:
-                        break;
-
-                    case PAUSE:
-                        stop = true;
+                        stop = vms.get(i).delay();
                         break;
 
                     case OK:
