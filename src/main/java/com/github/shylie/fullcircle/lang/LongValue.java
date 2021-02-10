@@ -68,6 +68,35 @@ public class LongValue implements Value {
     public Value dup() {
         return new LongValue(value);
     }
+
+    @Override
+    public Value cmp(Value other) {
+        if (other instanceof DoubleValue) {
+            if (value < ((DoubleValue)other).value) {
+                return new LongValue(-1);
+            }
+            else if (value > ((DoubleValue)other).value) {
+                return new LongValue(1);
+            }
+            else {
+                return new LongValue(0);
+            }
+        }
+        else if (other instanceof LongValue) {
+            if (value < ((LongValue)other).value) {
+                return new LongValue(-1);
+            }
+            else if (value > ((LongValue)other).value) {
+                return new LongValue(1);
+            }
+            else {
+                return new LongValue(0);
+            }
+        }
+        else {
+            return new LongValue(1);
+        }
+    }
     
     @Override
     public boolean equals(Object obj) {

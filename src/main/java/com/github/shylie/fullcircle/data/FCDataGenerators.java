@@ -1,4 +1,6 @@
-package com.github.shylie.fullcircle;
+package com.github.shylie.fullcircle.data;
+
+import com.github.shylie.fullcircle.FullCircle;
 
 import net.minecraft.data.DataGenerator;
 import net.minecraftforge.common.data.ExistingFileHelper;

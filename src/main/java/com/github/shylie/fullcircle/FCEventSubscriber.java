@@ -5,8 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.github.shylie.fullcircle.command.LinkFCDebugFileCommand;
+import com.github.shylie.fullcircle.command.RequestFCDebugFileCommand;
 import com.github.shylie.fullcircle.lang.OpCode;
 import com.github.shylie.fullcircle.lang.VM;
+import com.github.shylie.fullcircle.proxy.CommonProxy;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -19,7 +22,9 @@ import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent.WorldTickEvent;
 import net.minecraftforge.event.entity.EntityTravelToDimensionEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -30,31 +35,35 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
 @EventBusSubscriber(modid = FullCircle.MOD_ID)
 public class FCEventSubscriber {
-    private static final ArrayList<VM> vms = new ArrayList<>();
+    @SubscribeEvent
+    public static void onRegisterCommands(RegisterCommandsEvent event) {
+        LinkFCDebugFileCommand.register(event.getDispatcher());
+        RequestFCDebugFileCommand.register(event.getDispatcher());
+    }
 
     @SubscribeEvent
     public static void onEntityTravelToDimension(EntityTravelToDimensionEvent event) {
-        for (int i = vms.size() - 1; i >= 0; i--) {
-            if (vms.get(i).getCaster() == event.getEntity()) {
-                vms.remove(i);
+        for (int i = VMManager.MANAGER.size() - 1; i >= 0; i--) {
+            if (VMManager.MANAGER.get(i).getCaster() == event.getEntity()) {
+                VMManager.MANAGER.remove(i);
             }
         }
     }
 
     @SubscribeEvent
     public static void onWorldUnload(WorldEvent.Unload event) {
-        for (int i = vms.size() - 1; i >= 0; i--) {
-            if (vms.get(i).dimension == event.getWorld().getDimensionType()) {
-                vms.remove(i);
+        for (int i = VMManager.MANAGER.size() - 1; i >= 0; i--) {
+            if (VMManager.MANAGER.get(i).dimension == event.getWorld().getDimensionType()) {
+                VMManager.MANAGER.remove(i);
             }
         }
     }
 
     @SubscribeEvent
     public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
-        for (int i = vms.size() - 1; i >= 0; i--) {
-            if (vms.get(i).getCaster() == event.getPlayer()) {
-                vms.remove(i);
+        for (int i = VMManager.MANAGER.size() - 1; i >= 0; i--) {
+            if (VMManager.MANAGER.get(i).getCaster() == event.getPlayer()) {
+                VMManager.MANAGER.remove(i);
             }
         }
     }
@@ -96,19 +105,19 @@ public class FCEventSubscriber {
                 switch (event.getPlayer().getHorizontalFacing())
                 {
                     case EAST:
-                        vms.add(new VM(nbt.getString("fcspelldata").split("\n"), strings, cx, cy, com.github.shylie.fullcircle.lang.Direction.RIGHT, event, world.getDimensionType()));
+                        VMManager.MANAGER.add(new VM(nbt.getString("fcspelldata").split("\n"), strings, cx, cy, com.github.shylie.fullcircle.lang.Direction.RIGHT, event, world.getDimensionType()));
                         break;
 
                     case WEST:
-                        vms.add(new VM(nbt.getString("fcspelldata").split("\n"), strings, cx, cy, com.github.shylie.fullcircle.lang.Direction.LEFT, event, world.getDimensionType()));
+                        VMManager.MANAGER.add(new VM(nbt.getString("fcspelldata").split("\n"), strings, cx, cy, com.github.shylie.fullcircle.lang.Direction.LEFT, event, world.getDimensionType()));
                         break;
 
                     case NORTH:
-                        vms.add(new VM(nbt.getString("fcspelldata").split("\n"), strings, cx, cy, com.github.shylie.fullcircle.lang.Direction.DOWN, event, world.getDimensionType()));
+                        VMManager.MANAGER.add(new VM(nbt.getString("fcspelldata").split("\n"), strings, cx, cy, com.github.shylie.fullcircle.lang.Direction.DOWN, event, world.getDimensionType()));
                         break;
 
                     case SOUTH:
-                        vms.add(new VM(nbt.getString("fcspelldata").split("\n"), strings, cx, cy, com.github.shylie.fullcircle.lang.Direction.UP, event, world.getDimensionType()));
+                        VMManager.MANAGER.add(new VM(nbt.getString("fcspelldata").split("\n"), strings, cx, cy, com.github.shylie.fullcircle.lang.Direction.UP, event, world.getDimensionType()));
                         break;
 
                     case UP:
@@ -267,7 +276,7 @@ public class FCEventSubscriber {
 
             event.getItemStack().setTag(nbt);
         }
-        else if ((block == Blocks.RED_GLAZED_TERRACOTTA || block == FCBlocks.RED_GLAZED_TERRACOTTA_SIGN.get()) && item == Items.PAPER) {
+        else if (event.getHand() == Hand.MAIN_HAND && (block == Blocks.RED_GLAZED_TERRACOTTA || block == FCBlocks.RED_GLAZED_TERRACOTTA_SIGN.get()) && item == Items.PAPER && !event.getPlayer().isSneaking()) {
             event.getPlayer().swingArm(event.getHand());
             
             if (!event.getSide().isClient()) {
@@ -283,6 +292,19 @@ public class FCEventSubscriber {
                 }
             }
         }
+        else if (event.getHand() == Hand.MAIN_HAND && block == FCBlocks.RED_GLAZED_TERRACOTTA_SIGN.get() && item == Items.PAPER && event.getPlayer().isSneaking()) {
+            if (event.getWorld().getTileEntity(event.getPos()) instanceof RedGlazedTerracottaSignTileEntity) {
+                RedGlazedTerracottaSignTileEntity tileEntity = (RedGlazedTerracottaSignTileEntity)event.getWorld().getTileEntity(event.getPos());
+                CommonProxy.PROXY.addToChat(new StringTextComponent("Stored text: " + tileEntity.text));
+                event.getItemStack().setDisplayName(new StringTextComponent(tileEntity.text));
+            }
+        }
+        else if (event.getHand() == Hand.MAIN_HAND && block == FCBlocks.RED_GLAZED_TERRACOTTA_SIGN.get() && event.getItemStack().isEmpty() && event.getPlayer().isSneaking()) {
+            if (event.getWorld().getTileEntity(event.getPos()) instanceof RedGlazedTerracottaSignTileEntity) {
+                RedGlazedTerracottaSignTileEntity tileEntity = (RedGlazedTerracottaSignTileEntity)event.getWorld().getTileEntity(event.getPos());
+                CommonProxy.PROXY.addToChat(new StringTextComponent("Stored text: " + tileEntity.text));
+            }
+        }
     }
 
     @SubscribeEvent
@@ -291,22 +313,22 @@ public class FCEventSubscriber {
             return;
         }
 
-        for (int i = vms.size() - 1; i >= 0; i--) {
-            if (vms.get(i).dimension != event.world.getDimensionType()) {
+        for (int i = VMManager.MANAGER.size() - 1; i >= 0; i--) {
+            if (VMManager.MANAGER.get(i).dimension != event.world.getDimensionType()) {
                 continue;
             }
             
             for (int j = 0; j < 250; j++) {
                 boolean stop = false;
-                switch (vms.get(i).run(event)) {
+                switch (VMManager.MANAGER.get(i).run(event)) {
                     case CONTINUE:
-                        stop = vms.get(i).delay();
+                        stop = VMManager.MANAGER.get(i).delay();
                         break;
 
                     case OK:
                     case COMPILE_ERROR:
                     case RUNTIME_ERROR:
-                        vms.remove(i);
+                        VMManager.MANAGER.remove(i);
                         stop = true;
                 }
 

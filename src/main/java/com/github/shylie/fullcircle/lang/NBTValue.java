@@ -30,6 +30,16 @@ public class NBTValue implements Value {
     }
 
     @Override
+    public Value cmp(Value other) {
+        if (equals(other)) {
+            return new LongValue(0);
+        }
+        else {
+            return new LongValue(1);
+        }
+    }
+
+    @Override
     public Value neg() {
         return null;
     }

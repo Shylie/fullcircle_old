@@ -5,11 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.github.shylie.fullcircle.FCPacketHandler;
-import com.github.shylie.fullcircle.FullCircle;
 import com.github.shylie.fullcircle.net.MessageAdditiveMotion;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -50,12 +46,13 @@ import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class VM {
-    private static final Logger LOGGER = LogManager.getLogger(FullCircle.MOD_ID + ".lang.VM");
     private static final int STACK_MAX = 512;
     /** 2 blocks of info */
     private static final int REGISTER_MAX = 10 * 10;
     
     private final boolean compiled;
+
+    private StringBuilder log;
 
     private int ip;
     private int stackTop;
@@ -70,6 +67,8 @@ public class VM {
     public final DimensionType dimension;
 
     public VM(String[] source, Map<String, String> strings, int cx, int cy, Direction startDirection, PlayerInteractEvent event, DimensionType dimension) {
+        log = new StringBuilder();
+
         chunk = new Chunk();
         ip = 0;
         stack = new Value[STACK_MAX];
@@ -78,22 +77,24 @@ public class VM {
         this.dimension = dimension;
         caster = event.getPlayer();
 
-        compiled = Compiler.COMPILER.Compile(source, strings, cx, cy, startDirection, event, chunk);
+        compiled = Compiler.COMPILER.Compile(source, strings, cx, cy, startDirection, event, chunk, log);
 
         delay = 0;
     }
 
     public InterpretResult run(WorldTickEvent event) {
         if (!compiled) {
-            LOGGER.debug("Compilation error");
+            writeLog("Compilation error");
             return InterpretResult.COMPILE_ERROR;
         }
 
         // maybe limit amount of instructions run to prevent infinite loops?
+
+        writeLog("");
         for (int i = 0; i < stackTop; i++) {
-            LOGGER.debug(String.format("stack[%d] = %s", i, stack[i]));
+            writeLog("stack[%d] = %s", i, stack[i]);
         }
-        chunk.dissasembleInstruction(ip);
+        chunk.dissasembleInstruction(log, ip);
 
         int instruction = readInt();
         switch (instruction) {
@@ -108,7 +109,7 @@ public class VM {
             {
                 Value a = pop();
                 if (a == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_NEGATE at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_NEGATE at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -123,7 +124,7 @@ public class VM {
                 Value y = pop();
                 Value x = pop();
                 if (x == null || y == null || z == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_NEGATE_3 at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_NEGATE_3 at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -139,7 +140,7 @@ public class VM {
                 Value b = pop();
                 Value a = pop();
                 if (a == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_ADD at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_ADD at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -157,7 +158,7 @@ public class VM {
                 Value y1 = pop();
                 Value x1 = pop();
                 if (x1 == null || y1 == null || z1 == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_ADD_3 at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_ADD_3 at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -173,7 +174,7 @@ public class VM {
                 Value b = pop();
                 Value a = pop();
                 if (a == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_SUBTRACT at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_SUBTRACT at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -191,7 +192,7 @@ public class VM {
                 Value y1 = pop();
                 Value x1 = pop();
                 if (x1 == null || y1 == null || z1 == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_SUBTRACT_3 at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_SUBTRACT_3 at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -207,7 +208,7 @@ public class VM {
                 Value b = pop();
                 Value a = pop();
                 if (a == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_MULTIPLY at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_MULTIPLY at instruction address %04d", ip);
                 }
                 else {
                     push(a.mul(b));
@@ -224,7 +225,7 @@ public class VM {
                 Value y1 = pop();
                 Value x1 = pop();
                 if (x1 == null || y1 == null || z1 == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_MULTIPLY_3 at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_MULTIPLY_3 at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -240,7 +241,7 @@ public class VM {
                 Value b = pop();
                 Value a = pop();
                 if (a == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_DIVIDE at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_DIVIDE at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -258,7 +259,7 @@ public class VM {
                 Value y1 = pop();
                 Value x1 = pop();
                 if (x1 == null || y1 == null || z1 == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_DIVIDE_3 at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_DIVIDE_3 at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -273,7 +274,7 @@ public class VM {
             {
                 Value a = pop();
                 if (a == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_DUPLICATE at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_DUPLICATE at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -289,7 +290,7 @@ public class VM {
                 Value y = pop();
                 Value x = pop();
                 if (x == null || y == null || z == null) {
-                    LOGGER.debug(String.format("Null on stack at OP_DUPLICATE_3 at instruction address %04d", ip));
+                    writeLog("Null on stack at OP_DUPLICATE_3 at instruction address %04d", ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
                 else {
@@ -311,7 +312,7 @@ public class VM {
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid register address %03d at instruction address %04d", loc, ip));
+                    writeLog("Invalid register address %03d at instruction address %04d", loc, ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -326,7 +327,7 @@ public class VM {
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid register address %03d at instruction address %04d", loc, ip));
+                    writeLog("Invalid register address %03d at instruction address %04d", loc, ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -339,7 +340,7 @@ public class VM {
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid register address %03d at instruction address %04d", loc, ip));
+                    writeLog("Invalid register address %03d at instruction address %04d", loc, ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -354,7 +355,7 @@ public class VM {
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid register address %03d at instruction address %04d", loc, ip));
+                    writeLog("Invalid register address %03d at instruction address %04d", loc, ip);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -386,6 +387,20 @@ public class VM {
             case OpCode.POP:
             {
                 pop();
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.COMPARE:
+            {
+                Value b = pop();
+                Value a = pop();
+
+                if (a == null || b == null) {
+                    writeLog("Null on stack at OP_COMPARE at instruction address %04d", ip);
+                }
+
+
+
                 return InterpretResult.CONTINUE;
             }
 
@@ -470,7 +485,7 @@ public class VM {
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null));
+                    writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -486,7 +501,7 @@ public class VM {
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null));
+                    writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -502,7 +517,7 @@ public class VM {
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null));
+                    writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -564,13 +579,13 @@ public class VM {
                         push(new EntityValue(entityFound.getEntityId()));
                     }
                     else {
-                        LOGGER.debug(String.format("No entity found at instruction address %04d", ip));
+                        writeLog("No entity found at instruction address %04d", ip);
                         push(null);
                     }
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null));
+                    writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -617,7 +632,7 @@ public class VM {
                     return InterpretResult.CONTINUE;
                 }
                 else {
-                    LOGGER.debug(String.format("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null));
+                    writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
                     return InterpretResult.RUNTIME_ERROR;
                 }
             }
@@ -766,7 +781,7 @@ public class VM {
                     final INBTType<?> type = inbt.getType();
                     
                     if (type.equals(ByteArrayNBT.TYPE)) {
-                        LOGGER.debug("Array NBT types are not yet supported");
+                        writeLog("Array NBT types are not yet supported");
                         return InterpretResult.RUNTIME_ERROR;
                     }
                     else if (type.equals(ByteNBT.TYPE)) {
@@ -797,7 +812,7 @@ public class VM {
                         return InterpretResult.CONTINUE;
                     }
                     else if (type.equals(IntArrayNBT.TYPE)) {
-                        LOGGER.debug("Array NBT types are not yet supported");
+                        writeLog("Array NBT types are not yet supported");
                         return InterpretResult.RUNTIME_ERROR;
                     }
                     else if (type.equals(IntNBT.TYPE)) {
@@ -809,11 +824,11 @@ public class VM {
                         return InterpretResult.CONTINUE;
                     }
                     else if (type.equals(ListNBT.TYPE)) {
-                        LOGGER.debug("Array NBT types are not yet supported");
+                        writeLog("Array NBT types are not yet supported");
                         return InterpretResult.RUNTIME_ERROR;
                     }
                     else if (type.equals(LongArrayNBT.TYPE)) {
-                        LOGGER.debug("Array NBT types are not yet supported");
+                        writeLog("Array NBT types are not yet supported");
                         return InterpretResult.RUNTIME_ERROR;
                     }
                     else if (type.equals(LongNBT.TYPE)) {
@@ -956,6 +971,15 @@ public class VM {
                         }
                         break;
 
+                    case "uuid":
+                        if (putv instanceof EntityValue) {
+                            nbt.putUniqueId(splitPath[splitPath.length - 1], event.world.getEntityByID(((EntityValue)putv).entityID).getUniqueID());
+                        }
+                        else {
+                            return InterpretResult.RUNTIME_ERROR;
+                        }
+                        break;
+
                     case "nbt":
                         if (putv instanceof NBTValue) {
                             nbt.put(splitPath[splitPath.length - 1], ((NBTValue)putv).value);
@@ -973,13 +997,17 @@ public class VM {
             }
 
             default:
-                LOGGER.debug(String.format("Unknown OpCode '%04d' at instruction address %04d", instruction, ip));
+                writeLog("Unknown OpCode '%04d' at instruction address %04d", instruction, ip);
                 return InterpretResult.RUNTIME_ERROR;
         }
     }
 
     public PlayerEntity getCaster() {
         return caster;
+    }
+
+    public String getLog() {
+        return log.toString();
     }
 
     public boolean delay() {
@@ -1001,7 +1029,7 @@ public class VM {
 
     private void push(Value value) {
         if (stackTop >= STACK_MAX) {
-            LOGGER.debug(String.format("Stack overflow at instruction address %04d", ip));
+            writeLog("Stack overflow at instruction address %04d", ip);
         }
         else {
             stack[stackTop++] = value;
@@ -1010,7 +1038,7 @@ public class VM {
 
     private Value pop() {
         if (stackTop <= 0) {
-            LOGGER.debug(String.format("Stack underflow at instruction address %04d", ip));
+            writeLog("Stack underflow at instruction address %04d", ip);
             return null;
         }
         else {
@@ -1030,7 +1058,7 @@ public class VM {
         }
     }
 
-    private static Optional<Double> asDouble(Value value) {
+    private Optional<Double> asDouble(Value value) {
         if (validate(value, DoubleValue.class) != null) {
             return Optional.of(validate(value, DoubleValue.class).value);
         }
@@ -1043,7 +1071,7 @@ public class VM {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends Value> T validate(Value value, Class<T> clazz) {
+    private <T extends Value> T validate(Value value, Class<T> clazz) {
         if (value != null && clazz.isInstance(value)) {
             return (T)value;
         }
@@ -1053,13 +1081,17 @@ public class VM {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T extends Value> T validate(Value value, Class<T> clazz, String debugMessage) {
+    private <T extends Value> T validate(Value value, Class<T> clazz, String debugMessage) {
         if (value != null && clazz.isInstance(value)) {
             return (T)value;
         }
         else {
-            LOGGER.debug(debugMessage);
+            writeLog(debugMessage);
             return null;
         }
+    }
+
+    private void writeLog(String message, Object... objects) {
+        log.append(String.format(message, objects) + "\n");
     }
 }

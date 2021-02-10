@@ -1,4 +1,4 @@
-package com.github.shylie.fullcircle;
+package com.github.shylie.fullcircle.data;
 
 import java.util.List;
 import java.util.Map;
@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import com.github.shylie.fullcircle.FullCircle;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.mojang.datafixers.util.Pair;

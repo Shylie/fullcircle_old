@@ -33,6 +33,16 @@ public class StringValue implements Value {
     }
 
     @Override
+    public Value cmp(Value other) {
+        if (equals(other)) {
+            return new LongValue(0);
+        }
+        else {
+            return new LongValue(1);
+        }
+    }
+
+    @Override
     public Value neg() {
         return null;
     }
@@ -45,7 +55,7 @@ public class StringValue implements Value {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) { return true; }
-        if (obj instanceof StringValue) { return this.value.equals(((StringValue)obj).value); }
+        if (obj instanceof StringValue) { return value.equals(((StringValue)obj).value); }
         return false;
     }
 

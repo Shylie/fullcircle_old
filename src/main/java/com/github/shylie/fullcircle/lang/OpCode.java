@@ -13,6 +13,10 @@ public class OpCode {
     public static final int DIVIDE = 4;
     /** Green, Light Gray | ..., Value -&gt; ..., Value (2) */
     public static final int DUPLICATE = 5;
+    /** Green, Gray | ..., Value (2) -&gt; ..., NumberValue */
+    public static final int COMPARE = 6;
+    /** Green, Yellow | ..., Value -&gt; ... */
+    public static final int POP = 7;
 
     /** Brown, Green | ..., NumberValue (3) -&gt; ..., NumberValue (3) */
     public static final int NEGATE_3 = 10;
@@ -27,16 +31,16 @@ public class OpCode {
     /** Brown, Light Gray | ..., Value (3) -&gt; ..., Value (6) */
     public static final int DUPLICATE_3 = 15;
 
-    /** Blue, Green | ..., NumberValue (6) -&gt; ..., DoubleValue (3) */
+    /** Blue, Green | ..., NumberValue (6) -&gt; ..., NumberValue (4) */
     public static final int RAYCAST_BLOCKPOS = 20;
-    /** Blue, Brown | ..., NumberValue (6) -&gt; ..., DoubleValue (3) */
+    /** Blue, Brown | ..., NumberValue (6) -&gt; ..., NumberValue (4) */
     public static final int RAYCAST_BLOCKSIDE = 21;
 
-    /** Purple, Green | ..., EntityValue -&gt; ..., DoubleValue (3) */
+    /** Purple, Green | ..., EntityValue -&gt; ..., NumberValue (3) */
     public static final int ENTITY_POS = 30;
-    /** Purple, Brown | ..., EntityValue -&gt; ..., DoubleValue (3) */
+    /** Purple, Brown | ..., EntityValue -&gt; ..., NumberValue (3) */
     public static final int ENTITY_EYE_POS = 31;
-    /** Purple, Blue | ..., EntityValue -&gt; ..., DoubleValue (3) */
+    /** Purple, Blue | ..., EntityValue -&gt; ..., NumberValue (3) */
     public static final int ENTITY_LOOK = 32;
     /** Purple, Purple | ..., EntityValue -&gt; ..., EntityValue */
     public static final int ENTITY_LOOKED_AT = 33;
@@ -63,7 +67,7 @@ public class OpCode {
     public static final int NEW_NBT = 60;
     /** Gray, Brown | ..., NBTValue, StringValue -&gt; ..., Value */
     public static final int NBT_GET = 61;
-    /** Gray, Blue | ..., NBTValue, StringValue, Value, StringValue -&gt; ..., NBTValue */
+    /** Gray, Blue | ..., NBTValue, StringValue, StringValue, Value -&gt; ..., NBTValue */
     public static final int NBT_SET = 62;
 
     /** Orange, Green, Unknown, Unknown | ... -&gt; ..., NumberValue */
@@ -88,7 +92,6 @@ public class OpCode {
     public static final int JUMP_IF_NEGATIVE = 105;
     public static final int JUMP_IF_POSITIVE = 106;
     public static final int JUMP = 107;
-    public static final int POP = 108;
 
     public static int parseColors(Object c1, Object c2) {
         return Integer.parseInt(c1.toString() + c2.toString());
@@ -102,24 +105,24 @@ public class OpCode {
         return Double.parseDouble(c1.toString() + c2.toString() + c3.toString() + c4.toString() + "." + c5.toString() + c6.toString());
     }
 
-    /** 0 */
+    /** {@value} */
     public static final char ID_GREEN = '0';
-    /** 1 */
+    /** {@value} */
     public static final char ID_BROWN = '1';
-    /** 2 */
+    /** {@value} */
     public static final char ID_BLUE = '2';
-    /** 3 */
+    /** {@value} */
     public static final char ID_PURPLE = '3';
-    /** 4 */
+    /** {@value} */
     public static final char ID_CYAN = '4';
-    /** 5 */
+    /** {@value} */
     public static final char ID_LIGHT_GRAY = '5';
-    /** 6 */
+    /** {@value} */
     public static final char ID_GRAY = '6';
-    /** 7 */
+    /** {@value} */
     public static final char ID_YELLOW = '7';
-    /** 8 */
+    /** {@value} */
     public static final char ID_LIGHT_BLUE = '8';
-    /** 9 */
+    /** {@value} */
     public static final char ID_ORANGE = '9';
 }

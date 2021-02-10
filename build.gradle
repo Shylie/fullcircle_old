@@ -13,7 +13,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = '0.2.3'
+version = '0.2.5'
 group = 'com.github.shylie.fullcircle' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'fullcircle'
 
@@ -174,8 +174,17 @@ task makeJavadocs(type: Javadoc) {
     classpath = configurations.compile
 }
 
+task signJar(type: Exec) {
+    onlyIf {
+        project.hasProperty('keyStorePass')
+    }
+
+    commandLine 'jarSigner', '-storepass', project.keyStorePass, jar.archivePath, 'shy'
+}
+
 build.dependsOn sourcesJar
-build.dependsOn makeJavadocs
+// build.dependsOn makeJavadocs
+build.dependsOn signJar
 
 artifacts {
     archives sourcesJar

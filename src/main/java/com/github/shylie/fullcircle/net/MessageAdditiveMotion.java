@@ -21,26 +21,26 @@ public class MessageAdditiveMotion {
         this.dz = dz;
     }
 
-    public static void encode(MessageAdditiveMotion message, PacketBuffer buffer) {
-        buffer.writeInt(message.eid);
-        buffer.writeDouble(message.dx);
-        buffer.writeDouble(message.dy);
-        buffer.writeDouble(message.dz);
+    public MessageAdditiveMotion(PacketBuffer buffer) {
+        eid = buffer.readVarInt();
+        dx = buffer.readDouble();
+        dy = buffer.readDouble();
+        dz = buffer.readDouble();
     }
 
-    public static MessageAdditiveMotion decode(PacketBuffer buffer) {
-        int eid = buffer.readInt();
-        double dx = buffer.readDouble();
-        double dy = buffer.readDouble();
-        double dz = buffer.readDouble();
-        return new MessageAdditiveMotion(eid, dx, dy, dz);
+    public void encode(PacketBuffer buffer) {
+        buffer.writeVarInt(eid);
+        buffer.writeDouble(dx);
+        buffer.writeDouble(dy);
+        buffer.writeDouble(dz);
     }
 
-    public static void handle(MessageAdditiveMotion message, Supplier<NetworkEvent.Context> context) {
+    public boolean recieve(Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> {
-            DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> message.execute());
+            DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> execute());
         });
         context.get().setPacketHandled(true);
+        return true;
     }
 
     private DistExecutor.SafeRunnable execute() {

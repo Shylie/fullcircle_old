@@ -49,13 +49,12 @@ public class Compiler {
     private int wcy;
     private Chunk chunk;
     private PlayerInteractEvent event;
-    private List<IfInfo> infos;
+    private List<IfInfo> infos = new ArrayList<>();
 
     private Compiler() {
-        infos = new ArrayList<>();
     }
 
-    public boolean Compile(String[] source, Map<String, String> strings, int wcx, int wcy, Direction startDirection, PlayerInteractEvent event, Chunk out) {
+    public boolean Compile(String[] source, Map<String, String> strings, int wcx, int wcy, Direction startDirection, PlayerInteractEvent event, Chunk out, StringBuilder log) {
         this.source = source;
         this.strings = strings;
         this.wcx = wcx;
@@ -82,7 +81,7 @@ public class Compiler {
             chunk.write(OpCode.RETURN);
         }
 
-        chunk.dissasemble("main");
+        chunk.dissasemble(log, "main");
 
         return result == CompileResult.OK;
     }
@@ -252,6 +251,8 @@ public class Compiler {
                 case OpCode.DIVIDE_3:
                 case OpCode.DUPLICATE:
                 case OpCode.DUPLICATE_3:
+                case OpCode.POP:
+                case OpCode.COMPARE:
                 case OpCode.RAYCAST_BLOCKPOS:
                 case OpCode.RAYCAST_BLOCKSIDE:
                 case OpCode.ENTITY_POS:
