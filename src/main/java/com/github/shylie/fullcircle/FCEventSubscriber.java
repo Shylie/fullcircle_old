@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.github.shylie.fullcircle.command.LinkFCDebugFileCommand;
 import com.github.shylie.fullcircle.command.RequestFCDebugFileCommand;
+import com.github.shylie.fullcircle.command.StopSpellsCommand;
 import com.github.shylie.fullcircle.lang.OpCode;
 import com.github.shylie.fullcircle.lang.VM;
 import com.github.shylie.fullcircle.proxy.CommonProxy;
@@ -39,12 +40,13 @@ public class FCEventSubscriber {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         LinkFCDebugFileCommand.register(event.getDispatcher());
         RequestFCDebugFileCommand.register(event.getDispatcher());
+        StopSpellsCommand.register(event.getDispatcher());
     }
 
     @SubscribeEvent
     public static void onEntityTravelToDimension(EntityTravelToDimensionEvent event) {
         for (int i = VMManager.MANAGER.size() - 1; i >= 0; i--) {
-            if (VMManager.MANAGER.get(i).getCaster() == event.getEntity()) {
+            if (VMManager.MANAGER.get(i).getCaster().getUniqueID().equals(event.getEntity().getUniqueID())) {
                 VMManager.MANAGER.remove(i);
             }
         }
@@ -62,7 +64,8 @@ public class FCEventSubscriber {
     @SubscribeEvent
     public static void onPlayerLoggedOut(PlayerLoggedOutEvent event) {
         for (int i = VMManager.MANAGER.size() - 1; i >= 0; i--) {
-            if (VMManager.MANAGER.get(i).getCaster() == event.getPlayer()) {
+            VMManager.MANAGER.removeRequest(event.getPlayer().getUniqueID());
+            if (VMManager.MANAGER.get(i).getCaster().getUniqueID().equals(event.getPlayer().getUniqueID())) {
                 VMManager.MANAGER.remove(i);
             }
         }
@@ -318,7 +321,7 @@ public class FCEventSubscriber {
                 continue;
             }
             
-            for (int j = 0; j < 250; j++) {
+            for (int j = 0; j < 1250; j++) {
                 boolean stop = false;
                 switch (VMManager.MANAGER.get(i).run(event)) {
                     case CONTINUE:

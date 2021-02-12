@@ -3,10 +3,6 @@ package com.github.shylie.fullcircle.lang;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.github.shylie.fullcircle.proxy.CommonProxy;
-
-import net.minecraft.entity.player.PlayerEntity;
-
 public class Chunk {
     private List<Integer> code;
     private List<Value> constants;
@@ -119,6 +115,21 @@ public class Chunk {
             case OpCode.DUPLICATE_3:
                 return simpleInstruction(log, "OP_DUPLICATE_3", offset);
 
+            case OpCode.POW:
+                return simpleInstruction(log, "OP_POW", offset);
+
+            case OpCode.SIN:
+                return simpleInstruction(log, "OP_SIN", offset);
+
+            case OpCode.COS:
+                return simpleInstruction(log, "OP_COS", offset);
+
+            case OpCode.TAN:
+                return simpleInstruction(log, "OP_TAN", offset);
+
+            case OpCode.MOD:
+                return simpleInstruction(log, "OP_MOD", offset);
+
             case OpCode.LOAD:
                 return argInstruction(log, "OP_LOAD", offset);
 
@@ -181,6 +192,12 @@ public class Chunk {
 
             case OpCode.MODIFY_ENTITY_NBT:
                 return simpleInstruction(log, "OP_MODIFY_ENTITY_NBT", offset);
+
+            case OpCode.SET_BLOCK:
+                return simpleInstruction(log, "OP_SET_BLOCK", offset);
+
+            case OpCode.SET_BLOCK_STATE:
+                return simpleInstruction(log, "OP_SET_BLOCK_STATE", offset);
 
             case OpCode.PAUSE:
                 return simpleInstruction(log, "OP_PAUSE", offset);

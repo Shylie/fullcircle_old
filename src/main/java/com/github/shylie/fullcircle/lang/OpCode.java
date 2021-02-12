@@ -3,33 +3,42 @@ package com.github.shylie.fullcircle.lang;
 public class OpCode {
     /** Green, Green | ..., NumberValue -&gt; ..., NumberValue */
     public static final int NEGATE = 0;
-    /** Green, Brown | ..., NumberValue (2) -&gt; ..., NumberValue */
-    public static final int ADD = 1;
+    /** Green, Brown | ..., NumberValue (3) -&gt; ..., NumberValue (3) */
+    public static final int NEGATE_3 = 1;
     /** Green, Blue | ..., NumberValue (2) -&gt; ..., NumberValue */
-    public static final int SUBTRACT = 2;
-    /** Green, Purple | ..., NumberValue (2) -&gt; ..., NumberValue */
-    public static final int MULTIPLY = 3;
+    public static final int ADD = 2;
+    /** Green, Purple | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
+    public static final int ADD_3 = 3;
     /** Green, Cyan | ..., NumberValue (2) -&gt; ..., NumberValue */
-    public static final int DIVIDE = 4;
-    /** Green, Light Gray | ..., Value -&gt; ..., Value (2) */
-    public static final int DUPLICATE = 5;
-    /** Green, Gray | ..., Value (2) -&gt; ..., NumberValue */
-    public static final int COMPARE = 6;
-    /** Green, Yellow | ..., Value -&gt; ... */
-    public static final int POP = 7;
-
-    /** Brown, Green | ..., NumberValue (3) -&gt; ..., NumberValue (3) */
-    public static final int NEGATE_3 = 10;
-    /** Brown, Brown | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
-    public static final int ADD_3 = 11;
-    /** Brown, Blue | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
-    public static final int SUBTRACT_3 = 12;
-    /** Brown, Purple | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
-    public static final int MULTIPLY_3 = 13;
-    /** Brown, Cyan | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
-    public static final int DIVIDE_3 = 14;
-    /** Brown, Light Gray | ..., Value (3) -&gt; ..., Value (6) */
-    public static final int DUPLICATE_3 = 15;
+    public static final int SUBTRACT = 4;
+    /** Green, Light Gray | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
+    public static final int SUBTRACT_3 = 5;
+    /** Green, Gray | ..., NumberValue (2) -&gt; ..., NumberValue */
+    public static final int MULTIPLY = 6;
+    /** Green, Yellow | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
+    public static final int MULTIPLY_3 = 7;
+    /** Green, Light Blue | ..., NumberValue (2) -&gt; ..., NumberValue */
+    public static final int DIVIDE = 8;
+    /** Green, Orange | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
+    public static final int DIVIDE_3 = 9;
+    /** Brown, Green | ..., Value -&gt; ..., Value (2) */
+    public static final int DUPLICATE = 10;
+    /** Brown, Brown | ..., Value (3) -&gt; ..., Value (6) */
+    public static final int DUPLICATE_3 = 11;
+    /** Brown, Blue | ..., Value (2) -&gt; ..., NumberValue */
+    public static final int COMPARE = 12;
+    /** Brown, Purple | ..., NumberValue (2) -&gt; ..., NumberValue */
+    public static final int POW = 13;
+    /** Brown, Cyan | ..., NumberValue -&gt; ..., NumberValue */
+    public static final int SIN = 14;
+    /** Brown, Light Gray | ..., NumberValue -&gt; ..., NumberValue */
+    public static final int COS = 15;
+    /** Brown, Gray | ..., NumberValue -&gt; ..., NumberValue */
+    public static final int TAN = 16;
+    /** Brown, Yellow | ..., NumberValue (2) -&gt; ..., NumberValue */
+    public static final int MOD = 17;
+    /** Brown, Orange | ..., Value -&gt; ... */
+    public static final int POP = 19;
 
     /** Blue, Green | ..., NumberValue (6) -&gt; ..., NumberValue (4) */
     public static final int RAYCAST_BLOCKPOS = 20;
@@ -54,7 +63,7 @@ public class OpCode {
     public static final int PAUSE = 50;
     /** Light Gray, Brown | ..., EntityValue, NumberValue (3) -&gt; ... */
     public static final int ADD_MOTION = 51;
-    /** Light Gray, Blue | ..., StringValue (2), NumberValue (3) -&gt; ..., EntityValue */
+    /** Light Gray, Blue | ..., NumberValue (3), StringValue (2) -&gt; ..., EntityValue */
     public static final int SPAWN_ENTITY = 52;
     /** Light Gray, Purple | ..., NumberValue (4) -&gt; ... */
     public static final int CREATE_EXPLOSION = 53;
@@ -62,6 +71,10 @@ public class OpCode {
     public static final int MOVE_BLOCK = 54;
     /** Light Gray, Light Gray | ..., EntityValue, NBTValue -&gt; ... */
     public static final int MODIFY_ENTITY_NBT = 55;
+    /** Light Gray, Gray | ..., NumberValue (3), StringValue (2) -&gt; ... */
+    public static final int SET_BLOCK = 56;
+    /** Light Gray, Yellow | ..., NumberValue (3), StringValue (2) -&gt; ... */
+    public static final int SET_BLOCK_STATE = 57;
 
     /** Gray, Green | ... -&gt; ..., NBTValue */
     public static final int NEW_NBT = 60;

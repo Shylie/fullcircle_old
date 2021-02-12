@@ -123,7 +123,9 @@ public class Compiler {
             if (result == CompileResult.ERROR) { return CompileResult.ERROR; }
         }
 
-        chunk.write(OpCode.RETURN);
+        if (chunk.last() != OpCode.RETURN) {
+            chunk.write(OpCode.RETURN);
+        }
 
         chunk.modify(negpatch, chunk.size());
 
@@ -140,7 +142,9 @@ public class Compiler {
             if (result == CompileResult.ERROR) { return CompileResult.ERROR; }
         }
 
-        chunk.write(OpCode.RETURN);
+        if (chunk.last() != OpCode.RETURN) {
+            chunk.write(OpCode.RETURN);
+        }
 
         chunk.modify(pospatch, chunk.size());
 
@@ -253,6 +257,11 @@ public class Compiler {
                 case OpCode.DUPLICATE_3:
                 case OpCode.POP:
                 case OpCode.COMPARE:
+                case OpCode.POW:
+                case OpCode.SIN:
+                case OpCode.COS:
+                case OpCode.TAN:
+                case OpCode.MOD:
                 case OpCode.RAYCAST_BLOCKPOS:
                 case OpCode.RAYCAST_BLOCKSIDE:
                 case OpCode.ENTITY_POS:
@@ -266,6 +275,8 @@ public class Compiler {
                 case OpCode.MOVE_BLOCK:
                 case OpCode.PAUSE:
                 case OpCode.MODIFY_ENTITY_NBT:
+                case OpCode.SET_BLOCK:
+                case OpCode.SET_BLOCK_STATE:
                 case OpCode.NEW_NBT:
                 case OpCode.NBT_GET:
                 case OpCode.NBT_SET:

@@ -1,11 +1,13 @@
 package com.github.shylie.fullcircle.lang;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import com.github.shylie.fullcircle.FCPacketHandler;
 import com.github.shylie.fullcircle.net.MessageAdditiveMotion;
+import com.github.shylie.fullcircle.proxy.CommonProxy;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -13,6 +15,7 @@ import net.minecraft.block.material.PushReaction;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.ByteArrayNBT;
 import net.minecraft.nbt.ByteNBT;
 import net.minecraft.nbt.CompoundNBT;
@@ -27,6 +30,7 @@ import net.minecraft.nbt.LongArrayNBT;
 import net.minecraft.nbt.LongNBT;
 import net.minecraft.nbt.ShortNBT;
 import net.minecraft.nbt.StringNBT;
+import net.minecraft.state.Property;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
@@ -38,10 +42,12 @@ import net.minecraft.util.math.RayTraceContext.FluidMode;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.DimensionType;
 import net.minecraft.world.Explosion.Mode;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent.WorldTickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.event.world.BlockEvent.BreakEvent;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -304,6 +310,71 @@ public class VM {
                 }
             }
 
+            case OpCode.POW:
+            {
+                Value b = pop();
+                Value a = pop();
+                if (a == null || b == null) {
+                    writeLog("Null on stack at OP_POW at instruction address %04d", ip);
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                Optional<Double> db = asDouble(b);
+                Optional<Double> da = asDouble(a);
+                if (!da.isPresent() || !db.isPresent()) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                push(new DoubleValue(Math.pow(da.get(), db.get())));
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.SIN:
+            {
+                Optional<Double> v = asDouble(pop());
+                if (!v.isPresent()) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                push(new DoubleValue(Math.sin(v.get())));
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.COS:
+            {
+                Optional<Double> v = asDouble(pop());
+                if (!v.isPresent()) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                push(new DoubleValue(Math.cos(v.get())));
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.TAN:
+            {
+                Optional<Double> v = asDouble(pop());
+                if (!v.isPresent()) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                push(new DoubleValue(Math.tan(v.get())));
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.MOD:
+            {
+                Optional<Double> b = asDouble(pop());
+                Optional<Double> a = asDouble(pop());
+
+                if (!a.isPresent() || !b.isPresent()) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                push(new DoubleValue(a.get() % b.get()));
+                return InterpretResult.CONTINUE;
+            }
+
             case OpCode.LOAD:
             {
                 int loc = readInt();
@@ -399,8 +470,7 @@ public class VM {
                     writeLog("Null on stack at OP_COMPARE at instruction address %04d", ip);
                 }
 
-
-
+                push(a.cmp(b));
                 return InterpretResult.CONTINUE;
             }
 
@@ -639,12 +709,12 @@ public class VM {
 
             case OpCode.SPAWN_ENTITY:
             {
+                Value pathValue = pop();
+                Value namespaceValue = pop();
+
                 Optional<Double> z = asDouble(pop());
                 Optional<Double> y = asDouble(pop());
                 Optional<Double> x = asDouble(pop());
-
-                Value pathValue = pop();
-                Value namespaceValue = pop();
 
                 if (!(pathValue instanceof StringValue) || !(namespaceValue instanceof StringValue)) {
                     return InterpretResult.RUNTIME_ERROR;
@@ -716,7 +786,6 @@ public class VM {
                     if (nState.isAir(event.world, nPos) || nState.getMaterial().isReplaceable()) {
                         event.world.setBlockState(nPos, state, 1 | 2);
                         event.world.removeBlock(pos, false);
-                        event.world.playEvent(2001, pos, Block.getStateId(state));
                     }
 
                     return InterpretResult.CONTINUE;
@@ -751,6 +820,97 @@ public class VM {
 
                 e.read(((NBTValue)nbtv).value);
 
+                return InterpretResult.CONTINUE;
+            }
+
+            case OpCode.SET_BLOCK:
+            {
+                Value pathValue = pop();
+                Value namespaceValue = pop();
+
+                Optional<Double> z = asDouble(pop());
+                Optional<Double> y = asDouble(pop());
+                Optional<Double> x = asDouble(pop());
+
+                if (!(pathValue instanceof StringValue) || !(namespaceValue instanceof StringValue)) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                if (!x.isPresent() || !y.isPresent() || !z.isPresent()) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+                else {
+                    final BlockPos pos = new BlockPos(x.get(), y.get(), z.get());
+                    final BlockState state = event.world.getBlockState(pos);
+                    final Block block = state.getBlock();
+
+                    if (!event.world.isBlockModifiable(caster, pos)) {
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+
+                    final ResourceLocation resourceLocation = new ResourceLocation(((StringValue)namespaceValue).value, ((StringValue)pathValue).value);
+                    if (!ForgeRegistries.BLOCKS.containsKey(resourceLocation)) {
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+
+                    BreakEvent breakEvent = new BlockEvent.BreakEvent(event.world, pos, state, caster);
+                    if (MinecraftForge.EVENT_BUS.post(breakEvent)) {
+                        return InterpretResult.RUNTIME_ERROR;
+                    }
+
+                    if (!caster.isCreative()) {
+                        if (block.removedByPlayer(state, event.world, pos, caster, true, event.world.getFluidState(pos))) {
+                            block.onPlayerDestroy(event.world, pos, state);
+                            block.harvestBlock(event.world, caster, pos, state, event.world.getTileEntity(pos), ItemStack.EMPTY);
+                            block.dropXpOnBlockBreak((ServerWorld)event.world, pos, breakEvent.getExpToDrop());
+                        }
+                        else {
+                            event.world.removeBlock(pos, false);
+                        }
+                    }
+
+                    BlockState newState = ForgeRegistries.BLOCKS.getValue(resourceLocation).getDefaultState();
+                    event.world.setBlockState(pos, newState, 1 | 2);
+                    return InterpretResult.CONTINUE;
+                }
+            }
+
+            case OpCode.SET_BLOCK_STATE:
+            {
+                Value stateValue = pop();
+                Value stateNameValue = pop();
+
+                Optional<Double> z = asDouble(pop());
+                Optional<Double> y = asDouble(pop());
+                Optional<Double> x = asDouble(pop());
+
+                if (!(stateNameValue instanceof StringValue) || !(stateValue instanceof StringValue)) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                String stateName = ((StringValue)stateNameValue).value;
+
+                if (!x.isPresent() || !y.isPresent() || !z.isPresent()) {
+                    return InterpretResult.RUNTIME_ERROR;
+                }
+
+                final BlockPos pos = new BlockPos(x.get(), y.get(), z.get());
+                BlockState state = event.world.getBlockState(pos);
+                Property<?> property = null;
+                for (Property<?> _property : state.getProperties()) {
+                    if (stateName.equals(_property.getName())) {
+                        property = _property;
+                    }
+                }
+
+                if (property == null) {
+                    return InterpretResult.CONTINUE;
+                }
+
+                Optional<BlockState> newState = parseValue(state, property, ((StringValue)stateValue).value);
+                if (newState.isPresent()) {
+                    event.world.setBlockState(pos, newState.get(), 1 | 2);
+                }
                 return InterpretResult.CONTINUE;
             }
 
@@ -1006,8 +1166,13 @@ public class VM {
         return caster;
     }
 
-    public String getLog() {
-        return log.toString();
+    public List<String> getLog() {
+        List<String> strings = new ArrayList<>();
+        for (int i = 0; i < log.length(); i += CommonProxy.STRING_CHUNK_LENGTH) {
+            int end = (i + CommonProxy.STRING_CHUNK_LENGTH >= log.length() ? log.length() - 1 : i + CommonProxy.STRING_CHUNK_LENGTH);
+            strings.add(log.substring(i, end));
+        }
+        return strings;
     }
 
     public boolean delay() {
@@ -1093,5 +1258,15 @@ public class VM {
 
     private void writeLog(String message, Object... objects) {
         log.append(String.format(message, objects) + "\n");
+    }
+
+    private static <T extends Comparable<T>> Optional<BlockState> parseValue(BlockState state, Property<T> property, String value) {
+        Optional<T> optional = property.parseValue(value);
+        if (optional.isPresent()) {
+            return Optional.of(state.with(property, optional.get()));
+        }
+        else {
+            return Optional.empty();
+        }
     }
 }

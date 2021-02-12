@@ -13,4 +13,8 @@ public class ServerProxy extends CommonProxy {
     public File getFCDebugFile() {
         return null;
     }
+
+    @Override
+    public void writeToFCDebugFile(String string, int index, int total, int vmHash) {
+    }
 }

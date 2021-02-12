@@ -32,7 +32,7 @@ displayName="Full Circle" #mandatory
 authors="Shylie" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-A magic mod about drawing circles on the ground.
+A magic mod with in-world spell-building.
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.fullcircle]] #optional
