@@ -8,17 +8,17 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.IBlockReader;
 
 public class RedGlazedTerracottaSign extends OtherPickBlockGlazedTerracottaBlock {
-    public RedGlazedTerracottaSign() {
-        super(Blocks.RED_GLAZED_TERRACOTTA);
-    }
+	public RedGlazedTerracottaSign() {
+		super(Blocks.RED_GLAZED_TERRACOTTA);
+	}
 
-    @Override
-    public boolean hasTileEntity(BlockState state) {
-        return true;
-    }
+	@Override
+	public boolean hasTileEntity(BlockState state) {
+		return true;
+	}
 
-    @Override
-    public TileEntity createTileEntity(BlockState state, IBlockReader world) {
-        return new RedGlazedTerracottaSignTileEntity();
-    }
+	@Override
+	public TileEntity createTileEntity(BlockState state, IBlockReader world) {
+		return new RedGlazedTerracottaSignTileEntity();
+	}
 }

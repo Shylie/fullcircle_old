@@ -10,15 +10,15 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IBlockReader;
 
 public class OtherPickBlockGlazedTerracottaBlock extends GlazedTerracottaBlock {
-    private final Block pick;
+	private final Block pick;
 
-    public OtherPickBlockGlazedTerracottaBlock(Block pick) {
-        super(Properties.from(pick));
-        this.pick = pick;
-    }
+	public OtherPickBlockGlazedTerracottaBlock(Block pick) {
+		super(Properties.from(pick));
+		this.pick = pick;
+	}
 
-    @Override
-    public ItemStack getPickBlock(BlockState state, RayTraceResult target, IBlockReader world, BlockPos pos, PlayerEntity player) {
-        return new ItemStack(pick);
-    }
+	@Override
+	public ItemStack getPickBlock(BlockState state, RayTraceResult target, IBlockReader world, BlockPos pos, PlayerEntity player) {
+		return new ItemStack(pick);
+	}
 }

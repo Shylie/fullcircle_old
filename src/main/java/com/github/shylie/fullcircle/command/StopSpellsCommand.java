@@ -11,13 +11,13 @@ import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 
 public class StopSpellsCommand {
-    public static void register(CommandDispatcher<CommandSource> dispatcher) {
-        dispatcher.register(Commands.literal("fcstopspells").executes(StopSpellsCommand::stopSpells));
-    }
+	public static void register(CommandDispatcher<CommandSource> dispatcher) {
+		dispatcher.register(Commands.literal("fcstopspells").executes(StopSpellsCommand::stopSpells));
+	}
 
-    private static int stopSpells(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
-        UUID uuid = commandContext.getSource().asPlayer().getUniqueID();
-        VMManager.MANAGER.removeIf(vm -> vm.getCaster().getUniqueID().equals(uuid));
-        return 1;
-    }
+	private static int stopSpells(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
+		UUID uuid = commandContext.getSource().asPlayer().getUniqueID();
+		VMManager.MANAGER.removeIf(vm -> vm.getCaster().getUniqueID().equals(uuid));
+		return 1;
+	}
 }

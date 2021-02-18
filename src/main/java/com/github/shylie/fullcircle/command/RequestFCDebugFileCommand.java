@@ -11,13 +11,13 @@ import net.minecraft.command.Commands;
 import net.minecraft.util.text.StringTextComponent;
 
 public class RequestFCDebugFileCommand {
-    public static void register(CommandDispatcher<CommandSource> dispatcher) {
-        dispatcher.register(Commands.literal("fcrequestdebugfile").executes(RequestFCDebugFileCommand::requestDebugFile));
-    }
+	public static void register(CommandDispatcher<CommandSource> dispatcher) {
+		dispatcher.register(Commands.literal("fcrequestdebugfile").executes(RequestFCDebugFileCommand::requestDebugFile));
+	}
 
-    private static int requestDebugFile(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
-        VMManager.MANAGER.request(commandContext.getSource().asPlayer().getUniqueID());
-        CommonProxy.PROXY.addToChat(new StringTextComponent("Requested debug file"));
-        return 1;
-    }
+	private static int requestDebugFile(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
+		VMManager.MANAGER.request(commandContext.getSource().asPlayer().getUniqueID());
+		CommonProxy.PROXY.addToChat(new StringTextComponent("Requested debug file"));
+		return 1;
+	}
 }

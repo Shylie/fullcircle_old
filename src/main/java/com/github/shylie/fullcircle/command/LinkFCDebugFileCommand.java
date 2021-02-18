@@ -12,13 +12,13 @@ import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraftforge.fml.network.PacketDistributor;
 
 public class LinkFCDebugFileCommand {
-    public static void register(CommandDispatcher<CommandSource> dispatcher) {
-        dispatcher.register(Commands.literal("fcdebugfile").executes(LinkFCDebugFileCommand::sendLinkFileMessage));
-    }
+	public static void register(CommandDispatcher<CommandSource> dispatcher) {
+		dispatcher.register(Commands.literal("fcdebugfile").executes(LinkFCDebugFileCommand::sendLinkFileMessage));
+	}
 
-    private static int sendLinkFileMessage(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
-        ServerPlayerEntity player = commandContext.getSource().asPlayer();
-        FCPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new MessageLinkSpellLog());
-        return 1;
-    }
+	private static int sendLinkFileMessage(CommandContext<CommandSource> commandContext) throws CommandSyntaxException {
+		ServerPlayerEntity player = commandContext.getSource().asPlayer();
+		FCPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new MessageLinkSpellLog());
+		return 1;
+	}
 }

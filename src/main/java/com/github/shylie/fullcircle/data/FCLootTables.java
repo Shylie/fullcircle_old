@@ -25,32 +25,32 @@ import net.minecraft.loot.LootTable.Builder;
 import net.minecraft.util.ResourceLocation;
 
 public class FCLootTables extends LootTableProvider {
-    public FCLootTables(DataGenerator dataGenerator) {
-        super(dataGenerator);
-    }
+	public FCLootTables(DataGenerator dataGenerator) {
+		super(dataGenerator);
+	}
 
-    private final List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootParameterSet>> lootTableGenerators = ImmutableList.of(
-        Pair.of(FCBlockLootTables::new, LootParameterSets.BLOCK)
-    );
+	private final List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, LootTable.Builder>>>, LootParameterSet>> lootTableGenerators = ImmutableList.of(
+		Pair.of(FCBlockLootTables::new, LootParameterSets.BLOCK)
+	);
 
-    @Override
-    protected List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, Builder>>>, LootParameterSet>> getTables() {
-        return lootTableGenerators;
-    }
+	@Override
+	protected List<Pair<Supplier<Consumer<BiConsumer<ResourceLocation, Builder>>>, LootParameterSet>> getTables() {
+		return lootTableGenerators;
+	}
 
-    @Override
-    protected void validate(Map<ResourceLocation, LootTable> map, ValidationTracker validationtracker) {
-        final Set<ResourceLocation> modLootTableIds = LootTables.getReadOnlyLootTables().stream().filter(lootTable -> lootTable.getNamespace().equals(FullCircle.MOD_ID)).collect(Collectors.toSet());
+	@Override
+	protected void validate(Map<ResourceLocation, LootTable> map, ValidationTracker validationtracker) {
+		final Set<ResourceLocation> modLootTableIds = LootTables.getReadOnlyLootTables().stream().filter(lootTable -> lootTable.getNamespace().equals(FullCircle.MOD_ID)).collect(Collectors.toSet());
 
-        for (ResourceLocation id : Sets.difference(modLootTableIds, map.keySet())) {
-            validationtracker.addProblem("Missing mod loot table: " + id);
-        }
+		for (ResourceLocation id : Sets.difference(modLootTableIds, map.keySet())) {
+			validationtracker.addProblem("Missing mod loot table: " + id);
+		}
 
-        map.forEach((id, lootTable) -> LootTableManager.validateLootTable(validationtracker, id, lootTable));
-    }
+		map.forEach((id, lootTable) -> LootTableManager.validateLootTable(validationtracker, id, lootTable));
+	}
 
-    @Override
-    public String getName() {
-        return FullCircle.MOD_ID + "_lootTables";
-    }
+	@Override
+	public String getName() {
+		return FullCircle.MOD_ID + "_lootTables";
+	}
 }
