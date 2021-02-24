@@ -1,7 +1,6 @@
 package com.github.shylie.fullcircle.lang;
 
 public class EntityValue implements Value {
-
 	public final int entityID;
 
 	public EntityValue(int entityID) {
@@ -29,16 +28,6 @@ public class EntityValue implements Value {
 	}
 
 	@Override
-	public Value cmp(Value other) {
-		if (equals(other)) {
-			return new LongValue(0);
-		}
-		else {
-			return new LongValue(1);
-		}
-	}
-
-	@Override
 	public Value neg() {
 		return null;
 	}
@@ -50,6 +39,7 @@ public class EntityValue implements Value {
 
 	@Override
 	public boolean equals(Object obj) {
+		if (obj == this) { return true; }
 		if (obj instanceof EntityValue) {
 			return entityID == ((EntityValue)obj).entityID;
 		}
@@ -60,6 +50,6 @@ public class EntityValue implements Value {
 
 	@Override
 	public String toString() {
-		return "e: " + Integer.toString(entityID);
+		return "eid: " + Integer.toString(entityID);
 	}
 }

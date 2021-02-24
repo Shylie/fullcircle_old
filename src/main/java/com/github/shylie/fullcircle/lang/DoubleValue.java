@@ -1,6 +1,6 @@
 package com.github.shylie.fullcircle.lang;
 
-public class DoubleValue implements Value {
+public class DoubleValue implements NumberValue {
 	public final double value;
 
 	public DoubleValue(double value) {
@@ -96,6 +96,16 @@ public class DoubleValue implements Value {
 	@Override
 	public Value dup() {
 		return new DoubleValue(value);
+	}
+	
+	@Override
+	public double asDouble() {
+		return value;
+	}
+
+	@Override
+	public long asLong() {
+		return (long)value;
 	}
 	
 	@Override

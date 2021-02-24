@@ -14,7 +14,6 @@ import com.github.shylie.fullcircle.proxy.CommonProxy;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.material.PushReaction;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -45,7 +44,6 @@ import net.minecraft.util.math.RayTraceContext.FluidMode;
 import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.DimensionType;
 import net.minecraft.world.Explosion.Mode;
-import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent.WorldTickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -293,14 +291,14 @@ public class VM {
 
 			case OpCode.DUPLICATE:
 			{
-				Value a = pop();
-				if (a == null) {
+				Value v = pop();
+				if (v == null) {
 					writeLog("Null on stack at OP_DUPLICATE at instruction address %04d", ip);
 					return InterpretResult.RUNTIME_ERROR;
 				}
 				else {
-					push(a);
-					push(a.dup());
+					push(v);
+					push(v.dup());
 					return InterpretResult.CONTINUE;
 				}
 			}
@@ -310,83 +308,62 @@ public class VM {
 				Value z = pop();
 				Value y = pop();
 				Value x = pop();
-				if (x == null || y == null || z == null) {
-					writeLog("Null on stack at OP_DUPLICATE_3 at instruction address %04d", ip);
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					push(x);
-					push(y);
-					push(z);
-					push(x.dup());
-					push(y.dup());
-					push(z.dup());
-					return InterpretResult.CONTINUE;
-				}
+				if (x == null || y == null || z == null) { return InterpretResult.RUNTIME_ERROR; }
+				push(x);
+				push(y);
+				push(z);
+				push(x.dup());
+				push(y.dup());
+				push(z.dup());
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.POW:
 			{
-				Value b = pop();
-				Value a = pop();
-				if (a == null || b == null) {
-					writeLog("Null on stack at OP_POW at instruction address %04d", ip);
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				NumberValue b = checkType(pop(), NumberValue.class);
+				if (b == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue a = checkType(pop(), NumberValue.class);
+				if (a == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				Optional<Double> db = asDouble(b);
-				Optional<Double> da = asDouble(a);
-				if (!da.isPresent() || !db.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-
-				push(new DoubleValue(Math.pow(da.get(), db.get())));
+				push(new DoubleValue(Math.pow(a.asDouble(), b.asDouble())));
 				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.SIN:
 			{
-				Optional<Double> v = asDouble(pop());
-				if (!v.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				NumberValue v = checkType(pop(), NumberValue.class);
+				if (v == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				push(new DoubleValue(Math.sin(v.get())));
+				push(new DoubleValue(Math.sin(v.asDouble())));
 				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.COS:
 			{
-				Optional<Double> v = asDouble(pop());
-				if (!v.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				NumberValue v = checkType(pop(), NumberValue.class);
+				if (v == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				push(new DoubleValue(Math.cos(v.get())));
+				push(new DoubleValue(Math.cos(v.asDouble())));
 				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.TAN:
 			{
-				Optional<Double> v = asDouble(pop());
-				if (!v.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				NumberValue v = checkType(pop(), NumberValue.class);
+				if (v == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				push(new DoubleValue(Math.tan(v.get())));
+				push(new DoubleValue(Math.tan(v.asDouble())));
 				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.MOD:
 			{
-				Optional<Double> b = asDouble(pop());
-				Optional<Double> a = asDouble(pop());
+				NumberValue b = checkType(pop(), NumberValue.class);
+				if (b == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue a = checkType(pop(), NumberValue.class);
+				if (a == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (!a.isPresent() || !b.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-
-				push(new DoubleValue(a.get() % b.get()));
+				push(new DoubleValue(a.asDouble() % b.asDouble()));
 				return InterpretResult.CONTINUE;
 			}
 
@@ -421,67 +398,47 @@ public class VM {
 
 			case OpCode.LOAD:
 			{
-				Value loc = pop();
-				if (!(loc instanceof StringValue)) {
-					writeLog("Expected value to be of type StringValue, but got '%s'", loc != null ? loc.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					push(registers.get(((StringValue)loc).value));
-					return InterpretResult.CONTINUE;
-				}
+				StringValue loc = checkType(pop(), StringValue.class);
+				if (loc == null) { return InterpretResult.RUNTIME_ERROR; }
+				push(registers.get(loc.value));
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.LOAD_3:
 			{
-				Value loc = pop();
-				if (!(loc instanceof StringValue)) {
-					writeLog("Expected value to be of type StringValue, but got '%s'", loc != null ? loc.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					Value3 vec = registers_3.get(((StringValue)loc).value);
-					push(vec.x);
-					push(vec.y);
-					push(vec.z);
-					return InterpretResult.CONTINUE;
-				}
+				StringValue loc = checkType(pop(), StringValue.class);
+				if (loc == null) { return InterpretResult.RUNTIME_ERROR; }
+				Value3 vec = registers_3.get(loc.value);
+				push(vec.x);
+				push(vec.y);
+				push(vec.z);
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.STORE:
 			{
-				Value loc = pop();
+				StringValue loc = checkType(pop(), StringValue.class);
+				if (loc == null) { return InterpretResult.RUNTIME_ERROR; }
 				Value toStore = pop();
-				if (!(loc instanceof StringValue)) {
-					writeLog("Expected value to be of type StringValue, but got '%s'", loc != null ? loc.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					registers.put(((StringValue)loc).value, toStore);
-					return InterpretResult.CONTINUE;
-				}
+				registers.put(loc.value, toStore);
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.STORE_3:
 			{
-				Value loc = pop();
+				StringValue loc = checkType(pop(), StringValue.class);
+				if (loc == null) { return InterpretResult.RUNTIME_ERROR; }
 				Value toStoreZ = pop();
 				Value toStoreY = pop();
 				Value toStoreX = pop();
-				if (!(loc instanceof StringValue)) {
-					writeLog("Expected value to be of type StringValue, but got '%s'", loc != null ? loc.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					registers_3.put(((StringValue)loc).value, new Value3(toStoreX, toStoreY, toStoreZ));
-					return InterpretResult.CONTINUE;
-				}
+				registers_3.put(loc.value, new Value3(toStoreX, toStoreY, toStoreZ));
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.JUMP_IF_NEGATIVE:
 			{
 				int jmpto = readInt();
-				if (asDouble(peek(0)).isPresent() && asDouble(peek(0)).get() < 0) {
+				if (checkType(peek(0), NumberValue.class) != null && checkType(peek(0), NumberValue.class).asLong() < 0) {
 					ip = jmpto;
 				}
 				return InterpretResult.CONTINUE;
@@ -490,7 +447,7 @@ public class VM {
 			case OpCode.JUMP_IF_POSITIVE:
 			{
 				int jmpto = readInt();
-				if (asDouble(peek(0)).isPresent() && asDouble(peek(0)).get() > 0) {
+				if (checkType(peek(0), NumberValue.class) != null && checkType(peek(0), NumberValue.class).asLong() > 0) {
 					ip = jmpto;
 				}
 				return InterpretResult.CONTINUE;
@@ -516,11 +473,8 @@ public class VM {
 
 			case OpCode.CALL:
 			{
-				Value functionName = pop();
-				if (!(functionName instanceof StringValue)) {
-					writeLog("Expected value to be of type StringValue, but got '%s'", functionName != null ? functionName.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				StringValue functionName = checkType(pop(), StringValue.class);
+				if (functionName == null) { return InterpretResult.RUNTIME_ERROR; }
 
 				if (callStack.size() >= 4096) {
 					writeLog("Call stack overflow");
@@ -528,13 +482,13 @@ public class VM {
 				}
 				else {
 					callStack.push(ip);
-					Optional<Integer> functionAddress = chunk.getFunctionAddress(((StringValue)functionName).value);
+					Optional<Integer> functionAddress = chunk.getFunctionAddress(functionName.value);
 					if (functionAddress.isPresent()) {
 						ip = functionAddress.get();
 						return InterpretResult.CONTINUE;
 					}
 					else {
-						writeLog("Undefined function '%s'", ((StringValue)functionName).value);
+						writeLog("Undefined function '%s'", functionName.value);
 						return InterpretResult.RUNTIME_ERROR;
 					}
 				}
@@ -561,200 +515,182 @@ public class VM {
 
 			case OpCode.RAYCAST_BLOCKPOS:
 			{
-				Optional<Double> lz = asDouble(pop());
-				Optional<Double> ly = asDouble(pop());
-				Optional<Double> lx = asDouble(pop());
-				Optional<Double> sz = asDouble(pop());
-				Optional<Double> sy = asDouble(pop());
-				Optional<Double> sx = asDouble(pop());
+				NumberValue lz = checkType(pop(), NumberValue.class);
+				if (lz == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue ly = checkType(pop(), NumberValue.class);
+				if (ly == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue lx = checkType(pop(), NumberValue.class);
+				if (lx == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue sz = checkType(pop(), NumberValue.class);
+				if (sz == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue sy = checkType(pop(), NumberValue.class);
+				if (sy == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue sx = checkType(pop(), NumberValue.class);
+				if (sx == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (lz.isPresent() && ly.isPresent() && lx.isPresent() && lx.isPresent() && sz.isPresent() && sy.isPresent() && sx.isPresent()) {
-					BlockRayTraceResult result = event.world.rayTraceBlocks(
-						new RayTraceContext(
-							new Vector3d(sx.get(), sy.get(), sz.get()),
-							new Vector3d(sx.get() + lx.get() * 512.0, sy.get() + ly.get() * 512.0, sz.get() + lz.get() * 512.0),
-							BlockMode.OUTLINE,
-							FluidMode.NONE,
-							null
-						)
-					);
-					if (result.getType() == RayTraceResult.Type.MISS) {
-						push(new LongValue(1));
-					}
-					else {
-						push(new DoubleValue(result.getPos().getX()));
-						push(new DoubleValue(result.getPos().getY()));
-						push(new DoubleValue(result.getPos().getZ()));
-						push(new LongValue(0));
-					}
-					return InterpretResult.CONTINUE;
+				BlockRayTraceResult result = event.world.rayTraceBlocks(
+					new RayTraceContext(
+						new Vector3d(sx.asDouble(), sy.asDouble(), sz.asDouble()),
+						new Vector3d(sx.asDouble() + lx.asDouble() * 512.0, sy.asDouble() + ly.asDouble() * 512.0, sz.asDouble() + lz.asDouble() * 512.0),
+						BlockMode.OUTLINE,
+						FluidMode.NONE,
+						null
+					)
+				);
+				if (result.getType() == RayTraceResult.Type.MISS) {
+					push(new LongValue(1));
 				}
 				else {
-					return InterpretResult.RUNTIME_ERROR;
+					push(new DoubleValue(result.getPos().getX()));
+					push(new DoubleValue(result.getPos().getY()));
+					push(new DoubleValue(result.getPos().getZ()));
+					push(new LongValue(0));
 				}
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.RAYCAST_BLOCKSIDE:
 			{
-				Optional<Double> lz = asDouble(pop());
-				Optional<Double> ly = asDouble(pop());
-				Optional<Double> lx = asDouble(pop());
-				Optional<Double> sz = asDouble(pop());
-				Optional<Double> sy = asDouble(pop());
-				Optional<Double> sx = asDouble(pop());
+				NumberValue lz = checkType(pop(), NumberValue.class);
+				if (lz == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue ly = checkType(pop(), NumberValue.class);
+				if (ly == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue lx = checkType(pop(), NumberValue.class);
+				if (lx == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue sz = checkType(pop(), NumberValue.class);
+				if (sz == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue sy = checkType(pop(), NumberValue.class);
+				if (sy == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue sx = checkType(pop(), NumberValue.class);
+				if (sx == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (lz.isPresent() && ly.isPresent() && lx.isPresent() && lx.isPresent() && sz.isPresent() && sy.isPresent() && sx.isPresent()) {
-					BlockRayTraceResult result = event.world.rayTraceBlocks(
-						new RayTraceContext(
-							new Vector3d(sx.get(), sy.get(), sz.get()),
-							new Vector3d(sx.get() + lx.get() * 512.0, sy.get() + ly.get() * 512.0, sz.get() + lz.get() * 512.0),
-							BlockMode.OUTLINE,
-							FluidMode.NONE,
-							null
-						)
-					);
-					if (result.getType() == RayTraceResult.Type.MISS) {
-						push(new LongValue(1));
-					}
-					else {
-						push(new DoubleValue(result.getFace().getXOffset()));
-						push(new DoubleValue(result.getFace().getYOffset()));
-						push(new DoubleValue(result.getFace().getZOffset()));
-						push(new LongValue(0));
-					}
-					return InterpretResult.CONTINUE;
+				BlockRayTraceResult result = event.world.rayTraceBlocks(
+					new RayTraceContext(
+						new Vector3d(sx.asDouble(), sy.asDouble(), sz.asDouble()),
+						new Vector3d(sx.asDouble() + lx.asDouble() * 512.0, sy.asDouble() + ly.asDouble() * 512.0, sz.asDouble() + lz.asDouble() * 512.0),
+						BlockMode.OUTLINE,
+						FluidMode.NONE,
+						null
+					)
+				);
+				if (result.getType() == RayTraceResult.Type.MISS) {
+					push(new LongValue(1));
 				}
 				else {
-					return InterpretResult.RUNTIME_ERROR;
+					push(new DoubleValue(result.getFace().getXOffset()));
+					push(new DoubleValue(result.getFace().getYOffset()));
+					push(new DoubleValue(result.getFace().getZOffset()));
+					push(new LongValue(0));
 				}
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.ENTITY_POS:
 			{
-				Value ev = pop();
-				if (ev instanceof EntityValue) {
-					Entity entity = event.world.getEntityByID(((EntityValue)ev).entityID);
-					push(new DoubleValue(entity.getPosX()));
-					push(new DoubleValue(entity.getPosY()));
-					push(new DoubleValue(entity.getPosZ()));
-					return InterpretResult.CONTINUE;
-				}
-				else {
-					writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				EntityValue ev = checkType(pop(), EntityValue.class);
+				if (ev == null) { return InterpretResult.RUNTIME_ERROR; }
+				Entity entity = event.world.getEntityByID(ev.entityID);
+				if (entity == null) { return InterpretResult.RUNTIME_ERROR; }
+				push(new DoubleValue(entity.getPosX()));
+				push(new DoubleValue(entity.getPosY()));
+				push(new DoubleValue(entity.getPosZ()));
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.ENTITY_EYE_POS:
 			{
-				Value ev = pop();
-				if (ev instanceof EntityValue) {
-					Entity entity = event.world.getEntityByID(((EntityValue)ev).entityID);
-					push(new DoubleValue(entity.getPosX()));
-					push(new DoubleValue(entity.getPosYEye()));
-					push(new DoubleValue(entity.getPosZ()));
-					return InterpretResult.CONTINUE;
-				}
-				else {
-					writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				EntityValue ev = checkType(pop(), EntityValue.class);
+				if (ev == null) { return InterpretResult.RUNTIME_ERROR; }
+				Entity entity = event.world.getEntityByID(ev.entityID);
+				if (entity == null) { return InterpretResult.RUNTIME_ERROR; }
+				push(new DoubleValue(entity.getPosX()));
+				push(new DoubleValue(entity.getPosYEye()));
+				push(new DoubleValue(entity.getPosZ()));
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.ENTITY_LOOK:
 			{
-				Value ev = pop();
-				if (ev instanceof EntityValue) {
-					Entity entity = event.world.getEntityByID(((EntityValue)ev).entityID);
-					push(new DoubleValue(entity.getLookVec().x));
-					push(new DoubleValue(entity.getLookVec().y));
-					push(new DoubleValue(entity.getLookVec().z));
-					return InterpretResult.CONTINUE;
-				}
-				else {
-					writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				EntityValue ev = checkType(pop(), EntityValue.class);
+				if (ev == null) { return InterpretResult.RUNTIME_ERROR; }
+				Entity entity = event.world.getEntityByID(ev.entityID);
+				if (entity == null) { return InterpretResult.RUNTIME_ERROR; }
+				push(new DoubleValue(entity.getLookVec().x));
+				push(new DoubleValue(entity.getLookVec().y));
+				push(new DoubleValue(entity.getLookVec().z));
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.ENTITY_LOOKED_AT:
 			{
-				Value ev = pop();
+				EntityValue ev = checkType(pop(), EntityValue.class);
+				if (ev == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (ev instanceof EntityValue) {
-					Entity entity = event.world.getEntityByID(((EntityValue)ev).entityID);
+				Entity entity = event.world.getEntityByID(ev.entityID);
+				if (entity == null) { return InterpretResult.RUNTIME_ERROR; }
 
-					Vector3d start = new Vector3d(entity.getPosX(), entity.getPosYEye(), entity.getPosZ());
-					Vector3d end = start.add(entity.getLookVec().normalize().scale(512.0));
+				Vector3d start = new Vector3d(entity.getPosX(), entity.getPosYEye(), entity.getPosZ());
+				Vector3d end = start.add(entity.getLookVec().normalize().scale(512.0));
 
-					BlockRayTraceResult result = event.world.rayTraceBlocks(
-						new RayTraceContext(
-							start,
-							end,
-							BlockMode.VISUAL,
-							FluidMode.NONE,
-							null
-						)
-					);
+				BlockRayTraceResult result = event.world.rayTraceBlocks(
+					new RayTraceContext(
+						start,
+						end,
+						BlockMode.VISUAL,
+						FluidMode.NONE,
+						null
+					)
+				);
 
-					Entity entityLooked = null;
-					Entity entityFound = null;
+				Entity entityLooked = null;
+				Entity entityFound = null;
 
-					List<Entity> entitiesInBoundingBox = event.world.getEntitiesWithinAABBExcludingEntity(entity, entity.getBoundingBox().grow(
-							entity.getLookVec().x * 512.0,
-							entity.getLookVec().y * 512.0,
-							entity.getLookVec().z * 512.0).
-						grow(1.0)
-					);
+				List<Entity> entitiesInBoundingBox = event.world.getEntitiesWithinAABBExcludingEntity(entity, entity.getBoundingBox().grow(
+						entity.getLookVec().x * 512.0,
+						entity.getLookVec().y * 512.0,
+						entity.getLookVec().z * 512.0).
+					grow(1.0)
+				);
 
-					double minDistance = 512.0;
+				double minDistance = 512.0;
 
-					for (Entity e : entitiesInBoundingBox) {
-						if (e.canBeCollidedWith()) {
-							float collisionBorderSize = entity.getCollisionBorderSize();
-							AxisAlignedBB hitbox = e.getBoundingBox().grow(collisionBorderSize);
-							Optional<Vector3d> interceptPosition = hitbox.rayTrace(start, end);
+				for (Entity e : entitiesInBoundingBox) {
+					if (e.canBeCollidedWith()) {
+						float collisionBorderSize = entity.getCollisionBorderSize();
+						AxisAlignedBB hitbox = e.getBoundingBox().grow(collisionBorderSize);
+						Optional<Vector3d> interceptPosition = hitbox.rayTrace(start, end);
 
-							if (interceptPosition.isPresent()) {
-								double distanceToEntity = start.distanceTo(interceptPosition.get());
+						if (interceptPosition.isPresent()) {
+							double distanceToEntity = start.distanceTo(interceptPosition.get());
 
-								if (distanceToEntity < minDistance || distanceToEntity == 0.0) {
-									entityLooked = e;
-									minDistance = distanceToEntity;
-								}
-							}
-
-							if (entityLooked != null && (minDistance < 512.0 || result == null)) {
-								entityFound = entityLooked;
+							if (distanceToEntity < minDistance || distanceToEntity == 0.0) {
+								entityLooked = e;
+								minDistance = distanceToEntity;
 							}
 						}
-					}
 
-					if (entityFound != null) {
-						push(new EntityValue(entityFound.getEntityId()));
+						if (entityLooked != null && (minDistance < 512.0 || result == null)) {
+							entityFound = entityLooked;
+						}
 					}
-					else {
-						writeLog("No entity found at instruction address %04d", ip);
-						push(null);
-					}
-					return InterpretResult.CONTINUE;
+				}
+
+				if (entityFound != null) {
+					push(new EntityValue(entityFound.getEntityId()));
+					push(new LongValue(0));
 				}
 				else {
-					writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
+					push(new LongValue(1));
 				}
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.ENTITY_NBT:
 			{
-				Value ev = pop();
-				if (!(ev instanceof EntityValue)) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				Entity e = event.world.getEntityByID(((EntityValue)ev).entityID);
-				if (e == null) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				EntityValue ev = checkType(pop(), EntityValue.class);
+				if (ev == null) { return InterpretResult.RUNTIME_ERROR; }
+				Entity e = event.world.getEntityByID(ev.entityID);
+				if (e == null) { return InterpretResult.RUNTIME_ERROR; }
 
 				CompoundNBT nbt = new CompoundNBT();
 				e.writeUnlessRemoved(nbt);
@@ -764,238 +700,139 @@ public class VM {
 
 			case OpCode.ADD_MOTION:
 			{
-				Optional<Double> z = asDouble(pop());
-				Optional<Double> y = asDouble(pop());
-				Optional<Double> x = asDouble(pop());
-				Value ev = pop();
+				NumberValue z = checkType(pop(), NumberValue.class);
+				if (z == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue y = checkType(pop(), NumberValue.class);
+				if (y == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue x = checkType(pop(), NumberValue.class);
+				if (x == null) { return InterpretResult.RUNTIME_ERROR; }
+				EntityValue ev = checkType(pop(), EntityValue.class);
+				if (ev == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (!x.isPresent() || !y.isPresent() || !z.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else if (ev instanceof EntityValue) {
-					Entity entity = event.world.getEntityByID(((EntityValue)ev).entityID);
+				Entity entity = event.world.getEntityByID(ev.entityID);
 
-					MessageAdditiveMotion motion = new MessageAdditiveMotion(entity.getEntityId(), x.get(), y.get(), z.get());
-					if (entity instanceof ServerPlayerEntity) {
-						FCPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity)entity), motion);
-					}
-					else {
-						entity.addVelocity(x.get(), y.get(), z.get());
-						FCPacketHandler.INSTANCE.send(PacketDistributor.DIMENSION.with(() -> event.world.getDimensionKey()), motion);
-					}
-
-					return InterpretResult.CONTINUE;
+				MessageAdditiveMotion motion = new MessageAdditiveMotion(entity.getEntityId(), x.asDouble(), y.asDouble(), z.asDouble());
+				if (entity instanceof ServerPlayerEntity) {
+					FCPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity)entity), motion);
 				}
 				else {
-					writeLog("Invalid entity type '%s'", ev != null ? ev.getClass().getSimpleName() : null);
-					return InterpretResult.RUNTIME_ERROR;
+					entity.addVelocity(x.asDouble(), y.asDouble(), z.asDouble());
+					FCPacketHandler.INSTANCE.send(PacketDistributor.DIMENSION.with(() -> event.world.getDimensionKey()), motion);
 				}
+
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.SPAWN_ENTITY:
 			{
-				Value pathValue = pop();
-				Value namespaceValue = pop();
+				StringValue pathValue = checkType(pop(), StringValue.class);
+				if (pathValue == null) { return InterpretResult.RUNTIME_ERROR; }
+				StringValue namespaceValue = checkType(pop(), StringValue.class);
+				if (namespaceValue == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				Optional<Double> z = asDouble(pop());
-				Optional<Double> y = asDouble(pop());
-				Optional<Double> x = asDouble(pop());
+				NumberValue z = checkType(pop(), NumberValue.class);
+				if (z == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue y = checkType(pop(), NumberValue.class);
+				if (y == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue x = checkType(pop(), NumberValue.class);
+				if (x == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (!(pathValue instanceof StringValue) || !(namespaceValue instanceof StringValue)) {
+				final ResourceLocation resourceLocation = new ResourceLocation(namespaceValue.value, pathValue.value);
+				if (!ForgeRegistries.ENTITIES.containsKey(resourceLocation)) {
 					return InterpretResult.RUNTIME_ERROR;
 				}
-
-				if (!x.isPresent() || !y.isPresent() || !z.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					final ResourceLocation resourceLocation = new ResourceLocation(((StringValue)namespaceValue).value, ((StringValue)pathValue).value);
-					if (!ForgeRegistries.ENTITIES.containsKey(resourceLocation)) {
-						return InterpretResult.RUNTIME_ERROR;
-					}
-					Entity e = ForgeRegistries.ENTITIES.getValue(resourceLocation).create(event.world);
-					e.setPosition(x.get(), y.get(), z.get());
-					event.world.addEntity(e);
-					push(new EntityValue(e.getEntityId()));
-					return InterpretResult.CONTINUE;
-				}
+				Entity e = ForgeRegistries.ENTITIES.getValue(resourceLocation).create(event.world);
+				e.setPosition(x.asDouble(), y.asDouble(), z.asDouble());
+				event.world.addEntity(e);
+				push(new EntityValue(e.getEntityId()));
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.CREATE_EXPLOSION:
 			{
-				Optional<Double> radius = asDouble(pop());
-				Optional<Double> z = asDouble(pop());
-				Optional<Double> y = asDouble(pop());
-				Optional<Double> x = asDouble(pop());
+				NumberValue radius = checkType(pop(), NumberValue.class);
+				if (radius == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue z = checkType(pop(), NumberValue.class);
+				if (z == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue y = checkType(pop(), NumberValue.class);
+				if (y == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue x = checkType(pop(), NumberValue.class);
+				if (x == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (!x.isPresent() || !y.isPresent() || !z.isPresent() || !radius.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					event.world.createExplosion(null, x.get(), y.get(), z.get(), radius.get().floatValue(), Mode.NONE);
-					return InterpretResult.CONTINUE;
-				}
-			}
-
-			case OpCode.MOVE_BLOCK:
-			{
-				Optional<Double> dz = asDouble(pop());
-				Optional<Double> dy = asDouble(pop());
-				Optional<Double> dx = asDouble(pop());
-				Optional<Double> oz = asDouble(pop());
-				Optional<Double> oy = asDouble(pop());
-				Optional<Double> ox = asDouble(pop());
-
-				if (!ox.isPresent() || !oy.isPresent() || !oz.isPresent() || !dx.isPresent() || !dy.isPresent() || !dz.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					BlockPos pos = new BlockPos(ox.get(), oy.get(), oz.get());
-					BlockState state = event.world.getBlockState(pos);
-					if (event.world.getTileEntity(pos) != null || state.getPushReaction() != PushReaction.NORMAL || state.getBlockHardness(event.world, pos) == -1) {
-						return InterpretResult.CONTINUE;
-					}
-
-					BlockEvent.BreakEvent breakEvent = new BlockEvent.BreakEvent(event.world, pos, state, caster);
-					if (MinecraftForge.EVENT_BUS.post(breakEvent)) {
-						return InterpretResult.CONTINUE;
-					}
-
-					BlockPos nPos = new BlockPos(ox.get() + dx.get(), oy.get() + dy.get(), oz.get() + dz.get());
-					BlockState nState = event.world.getBlockState(nPos);
-
-					if (!event.world.isBlockModifiable(caster, pos) || !event.world.isBlockModifiable(caster, nPos)) {
-						return InterpretResult.CONTINUE;
-					}
-
-					if (nState.isAir(event.world, nPos) || nState.getMaterial().isReplaceable()) {
-						event.world.setBlockState(nPos, state, 1 | 2);
-						event.world.removeBlock(pos, false);
-					}
-
-					return InterpretResult.CONTINUE;
-				}
+				event.world.createExplosion(null, x.asDouble(), y.asDouble(), z.asDouble(), (float)radius.asDouble(), Mode.NONE);
+				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.PAUSE:
 			{
-				Optional<Double> pauseTime = asDouble(pop());
+				NumberValue pauseTime = checkType(pop(), NumberValue.class);
+				if (pauseTime == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (!pauseTime.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-
-				delay += pauseTime.get().intValue();
+				delay += pauseTime.asLong();
 				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.MODIFY_ENTITY_NBT:
 			{
-				Value nbtv = pop();
-				Value ev = pop();
+				NBTValue nbtv = checkType(pop(), NBTValue.class);
+				if (nbtv == null) { return InterpretResult.RUNTIME_ERROR; }
+				EntityValue ev = checkType(pop(), EntityValue.class);
+				if (ev == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (!(ev instanceof EntityValue) || !(nbtv instanceof NBTValue)) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-
-				Entity e = event.world.getEntityByID(((EntityValue)ev).entityID);
+				Entity e = event.world.getEntityByID(ev.entityID);
 				if (e == null) {
 					return InterpretResult.RUNTIME_ERROR;
 				}
 
-				e.read(((NBTValue)nbtv).value);
+				e.read(nbtv.value);
 
+				return InterpretResult.CONTINUE;
+			}
+
+			case OpCode.GET_BLOCK:
+			{
+				NumberValue z = checkType(pop(), NumberValue.class);
+				if (z == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue y = checkType(pop(), NumberValue.class);
+				if (y == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue x = checkType(pop(), NumberValue.class);
+				if (x == null) { return InterpretResult.RUNTIME_ERROR; }
+
+				final BlockPos pos = new BlockPos(x.asDouble(), y.asDouble(), z.asDouble());
+				push(new BlockStateValue(event.world.getBlockState(pos)));
 				return InterpretResult.CONTINUE;
 			}
 
 			case OpCode.SET_BLOCK:
 			{
-				Value pathValue = pop();
-				Value namespaceValue = pop();
+				BlockStateValue stateValue = checkType(pop(), BlockStateValue.class);
+				if (stateValue == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue z = checkType(pop(), NumberValue.class);
+				if (z == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue y = checkType(pop(), NumberValue.class);
+				if (y == null) { return InterpretResult.RUNTIME_ERROR; }
+				NumberValue x = checkType(pop(), NumberValue.class);
+				if (x == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				Optional<Double> z = asDouble(pop());
-				Optional<Double> y = asDouble(pop());
-				Optional<Double> x = asDouble(pop());
+				final BlockPos pos = new BlockPos(x.asDouble(), y.asDouble(), z.asDouble());
+				final BlockState state = event.world.getBlockState(pos);
 
-				if (!(pathValue instanceof StringValue) || !(namespaceValue instanceof StringValue)) {
-					return InterpretResult.RUNTIME_ERROR;
+				if (!event.world.isBlockModifiable(caster, pos)) {
+					push(new LongValue(1));
+					return InterpretResult.CONTINUE;
 				}
 
-				if (!x.isPresent() || !y.isPresent() || !z.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-				else {
-					final BlockPos pos = new BlockPos(x.get(), y.get(), z.get());
-					final BlockState state = event.world.getBlockState(pos);
-					final Block block = state.getBlock();
-
-					if (!event.world.isBlockModifiable(caster, pos)) {
-						return InterpretResult.RUNTIME_ERROR;
-					}
-
-					final ResourceLocation resourceLocation = new ResourceLocation(((StringValue)namespaceValue).value, ((StringValue)pathValue).value);
-					if (!ForgeRegistries.BLOCKS.containsKey(resourceLocation)) {
-						return InterpretResult.RUNTIME_ERROR;
-					}
-
+				if (!caster.isCreative()) {
 					BreakEvent breakEvent = new BlockEvent.BreakEvent(event.world, pos, state, caster);
 					if (MinecraftForge.EVENT_BUS.post(breakEvent)) {
-						return InterpretResult.RUNTIME_ERROR;
-					}
-
-					if (!caster.isCreative()) {
-						if (block.removedByPlayer(state, event.world, pos, caster, true, event.world.getFluidState(pos))) {
-							block.onPlayerDestroy(event.world, pos, state);
-							block.harvestBlock(event.world, caster, pos, state, event.world.getTileEntity(pos), ItemStack.EMPTY);
-							block.dropXpOnBlockBreak((ServerWorld)event.world, pos, breakEvent.getExpToDrop());
-						}
-						else {
-							event.world.removeBlock(pos, false);
-						}
-					}
-
-					BlockState newState = ForgeRegistries.BLOCKS.getValue(resourceLocation).getDefaultState();
-					event.world.setBlockState(pos, newState, 1 | 2);
-					return InterpretResult.CONTINUE;
-				}
-			}
-
-			case OpCode.SET_BLOCK_STATE:
-			{
-				Value stateValue = pop();
-				Value stateNameValue = pop();
-
-				Optional<Double> z = asDouble(pop());
-				Optional<Double> y = asDouble(pop());
-				Optional<Double> x = asDouble(pop());
-
-				if (!(stateNameValue instanceof StringValue) || !(stateValue instanceof StringValue)) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-
-				String stateName = ((StringValue)stateNameValue).value;
-
-				if (!x.isPresent() || !y.isPresent() || !z.isPresent()) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
-
-				final BlockPos pos = new BlockPos(x.get(), y.get(), z.get());
-				BlockState state = event.world.getBlockState(pos);
-				Property<?> property = null;
-				for (Property<?> _property : state.getProperties()) {
-					if (stateName.equals(_property.getName())) {
-						property = _property;
+						push(new LongValue(1));
+						return InterpretResult.CONTINUE;
 					}
 				}
 
-				if (property == null) {
-					return InterpretResult.CONTINUE;
-				}
-
-				Optional<BlockState> newState = parseValue(state, property, ((StringValue)stateValue).value);
-				if (newState.isPresent()) {
-					event.world.setBlockState(pos, newState.get(), 1 | 2);
-				}
+				final BlockState newState = Block.getValidBlockForPosition(stateValue.getState(), event.world, pos);
+				event.world.setBlockState(pos, newState, 1 | 2);
+				push(new LongValue(0));
 				return InterpretResult.CONTINUE;
 			}
 
@@ -1007,116 +844,124 @@ public class VM {
 
 			case OpCode.NBT_GET:
 			{
-				Value path = pop();
-				Value nbtv = pop();
+				StringValue ty = checkType(pop(), StringValue.class);
+				if (ty == null) { return InterpretResult.RUNTIME_ERROR; }
+				StringValue path = checkType(pop(), StringValue.class);
+				if (path == null) { return InterpretResult.RUNTIME_ERROR; }
+				NBTValue nbtv = checkType(pop(), NBTValue.class);
+				if (nbtv == null) { return InterpretResult.RUNTIME_ERROR; }
 
-				if (!(path instanceof StringValue) || !(nbtv instanceof NBTValue)) {
-					return InterpretResult.RUNTIME_ERROR;
-				}
+				String[] splitPath = path.value.split("\\.");
 
-				String[] splitPath = ((StringValue)path).value.split("\\.");
-
-				CompoundNBT nbt = ((NBTValue)nbtv).value;
-				for (int i = 0; i < splitPath.length; i++) {
+				CompoundNBT nbt = nbtv.value;
+				for (int i = 0; i < splitPath.length - 1; i++) {
 					if (!nbt.contains(splitPath[i])) {
 						return InterpretResult.RUNTIME_ERROR;
 					}
 
 					final INBT inbt = nbt.get(splitPath[i]);
-					final INBTType<?> type = inbt.getType();
-					
-					if (type.equals(ByteArrayNBT.TYPE)) {
-						writeLog("Array NBT types are not yet supported");
+
+					if (!inbt.getType().equals(CompoundNBT.TYPE)) {
 						return InterpretResult.RUNTIME_ERROR;
-					}
-					else if (type.equals(ByteNBT.TYPE)) {
-						if (i != splitPath.length - 1) {
-							return InterpretResult.RUNTIME_ERROR;
-						}
-
-						push(new LongValue(((ByteNBT)inbt).getLong()));
-						return InterpretResult.CONTINUE;
-					}
-					else if (type.equals(CompoundNBT.TYPE)) {
-						nbt = (CompoundNBT)inbt;
-					}
-					else if (type.equals(DoubleNBT.TYPE)) {
-						if (i != splitPath.length - 1) {
-							return InterpretResult.RUNTIME_ERROR;
-						}
-
-						push(new DoubleValue(((DoubleNBT)inbt).getDouble()));
-						return InterpretResult.CONTINUE;
-					}
-					else if (type.equals(FloatNBT.TYPE)) {
-						if (i != splitPath.length - 1) {
-							return InterpretResult.RUNTIME_ERROR;
-						}
-
-						push(new DoubleValue(((FloatNBT)inbt).getDouble()));
-						return InterpretResult.CONTINUE;
-					}
-					else if (type.equals(IntArrayNBT.TYPE)) {
-						writeLog("Array NBT types are not yet supported");
-						return InterpretResult.RUNTIME_ERROR;
-					}
-					else if (type.equals(IntNBT.TYPE)) {
-						if (i != splitPath.length - 1) {
-							return InterpretResult.RUNTIME_ERROR;
-						}
-
-						push(new LongValue(((IntNBT)inbt).getLong()));
-						return InterpretResult.CONTINUE;
-					}
-					else if (type.equals(ListNBT.TYPE)) {
-						writeLog("Array NBT types are not yet supported");
-						return InterpretResult.RUNTIME_ERROR;
-					}
-					else if (type.equals(LongArrayNBT.TYPE)) {
-						writeLog("Array NBT types are not yet supported");
-						return InterpretResult.RUNTIME_ERROR;
-					}
-					else if (type.equals(LongNBT.TYPE)) {
-						if (i != splitPath.length - 1) {
-							return InterpretResult.RUNTIME_ERROR;
-						}
-
-						push(new LongValue(((LongNBT)inbt).getLong()));
-						return InterpretResult.CONTINUE;
-					}
-					else if (type.equals(ShortNBT.TYPE)) {
-						if (i != splitPath.length - 1) {
-							return InterpretResult.RUNTIME_ERROR;
-						}
-
-						push(new LongValue(((ShortNBT)inbt).getLong()));
-						return InterpretResult.CONTINUE;
-					}
-					else if (type.equals(StringNBT.TYPE)) {
-						if (i != splitPath.length - 1) {
-							return InterpretResult.RUNTIME_ERROR;
-						}
-
-						push(new StringValue(((StringNBT)inbt).getString()));
-						return InterpretResult.CONTINUE;
 					}
 					else {
-						return InterpretResult.RUNTIME_ERROR;
+						nbt = (CompoundNBT)inbt;
 					}
 				}
 
-				push(new NBTValue(nbt));
-				return InterpretResult.CONTINUE;
+				final INBT inbt = nbt.get(splitPath[splitPath.length - 1]);
+
+				switch (ty.value) {
+					case "long":
+						if (inbt.getType().equals(ByteNBT.TYPE)) {
+							push(new LongValue(((ByteNBT)inbt).getLong()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(ShortNBT.TYPE)) {
+							push(new LongValue(((ShortNBT)inbt).getLong()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(IntNBT.TYPE)) {
+							push(new LongValue(((IntNBT)inbt).getLong()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(LongNBT.TYPE)) {
+							push(new LongValue(((LongNBT)inbt).getLong()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(FloatNBT.TYPE)) {
+							push(new LongValue(((FloatNBT)inbt).getLong()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(DoubleNBT.TYPE)) {
+							push(new LongValue(((DoubleNBT)inbt).getLong()));
+							return InterpretResult.CONTINUE;
+						}
+						else {
+							return InterpretResult.RUNTIME_ERROR;
+						}
+
+					case "double":
+						if (inbt.getType().equals(ByteNBT.TYPE)) {
+							push(new DoubleValue(((ByteNBT)inbt).getDouble()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(ShortNBT.TYPE)) {
+							push(new DoubleValue(((ShortNBT)inbt).getDouble()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(IntNBT.TYPE)) {
+							push(new DoubleValue(((IntNBT)inbt).getDouble()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(LongNBT.TYPE)) {
+							push(new DoubleValue(((LongNBT)inbt).getDouble()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(FloatNBT.TYPE)) {
+							push(new DoubleValue(((FloatNBT)inbt).getDouble()));
+							return InterpretResult.CONTINUE;
+						}
+						else if (inbt.getType().equals(DoubleNBT.TYPE)) {
+							push(new DoubleValue(((DoubleNBT)inbt).getDouble()));
+							return InterpretResult.CONTINUE;
+						}
+						else {
+							return InterpretResult.RUNTIME_ERROR;
+						}
+
+					case "string":
+						if (inbt.getType().equals(StringNBT.TYPE)) {
+							push(new StringValue(((StringNBT)inbt).getString()));
+							return InterpretResult.CONTINUE;
+						}
+						else {
+							return InterpretResult.RUNTIME_ERROR;
+						}
+
+					case "nbt":
+						if (inbt.getType().equals(CompoundNBT.TYPE)) {
+							push(new NBTValue((CompoundNBT)inbt));
+							return InterpretResult.CONTINUE;
+						}
+						else {
+							return InterpretResult.RUNTIME_ERROR;
+						}
+
+					default:
+						return InterpretResult.RUNTIME_ERROR;
+				}
 			}
 
 			case OpCode.NBT_SET:
 			{
 				Value putv = pop();
-				Value putvtype = pop();
-				Value path = pop();
-				Value nbtv = peek(0);
+				StringValue putvtype = checkType(pop(), StringValue.class);
+				StringValue path = checkType(pop(), StringValue.class);
+				NBTValue nbtv = checkType(peek(0), NBTValue.class);
 
-				if (!(putvtype instanceof StringValue) || !(path instanceof StringValue) || !(nbtv instanceof NBTValue) || (putv instanceof EntityValue)) {
+				if (putv instanceof BlockStateValue) {
+					writeLog("Cannot store block states in NBT");
 					return InterpretResult.RUNTIME_ERROR;
 				}
 
@@ -1216,7 +1061,7 @@ public class VM {
 						}
 						break;
 
-					case "uuid":
+					case "entity":
 						if (putv instanceof EntityValue) {
 							nbt.putUniqueId(splitPath[splitPath.length - 1], event.world.getEntityByID(((EntityValue)putv).entityID).getUniqueID());
 						}
@@ -1238,6 +1083,69 @@ public class VM {
 						return InterpretResult.RUNTIME_ERROR;
 				}
 
+				return InterpretResult.CONTINUE;
+			}
+
+			case OpCode.DEFAULT_BLOCK_STATE:
+			{
+				StringValue pathValue = checkType(pop(), StringValue.class);
+				if (pathValue == null) { return InterpretResult.RUNTIME_ERROR; }
+				StringValue namespaceValue = checkType(pop(), StringValue.class);
+				if (namespaceValue == null) { return InterpretResult.RUNTIME_ERROR; }
+
+				final ResourceLocation rl = new ResourceLocation(namespaceValue.value, pathValue.value);
+				if (ForgeRegistries.BLOCKS.containsKey(rl)) {
+					push(new BlockStateValue(ForgeRegistries.BLOCKS.getValue(rl).getDefaultState()));
+					return InterpretResult.CONTINUE;
+				}
+				else {
+					return InterpretResult.RUNTIME_ERROR;
+				}
+			}
+
+			case OpCode.BLOCK_STATE_GET:
+			{
+				StringValue propertyNameValue = checkType(pop(), StringValue.class);
+				if (propertyNameValue == null) { return InterpretResult.RUNTIME_ERROR; }
+				BlockStateValue bsv = checkType(peek(0), BlockStateValue.class);
+				if (bsv == null) { return InterpretResult.RUNTIME_ERROR; }
+
+				Optional<Long> longProp = bsv.getPropertyAsLong(propertyNameValue.value);
+				if (longProp.isPresent()) {
+					push(new LongValue(longProp.get()));
+					return InterpretResult.CONTINUE;
+				}
+
+				Optional<String> stringProp = bsv.getPropertyAsString(propertyNameValue.value);
+				if (stringProp.isPresent()) {
+					push(new StringValue(stringProp.get()));
+					push(new LongValue(0));
+				}
+				else {
+					push(new LongValue(1));
+				}
+				
+				return InterpretResult.CONTINUE;
+			}
+
+			case OpCode.BLOCK_STATE_SET:
+			{
+				Value newValueV = pop();
+				StringValue propertyNameValue = checkType(pop(), StringValue.class);
+				if (propertyNameValue == null) { return InterpretResult.RUNTIME_ERROR; }
+				BlockStateValue bsv = checkType(peek(0), BlockStateValue.class);
+				if (bsv == null) { return InterpretResult.RUNTIME_ERROR; }
+
+				if ((!(newValueV instanceof StringValue) && !(newValueV instanceof NumberValue))) {
+					writeLog("Expected StringValue or NumberValue, got '%s' instead", newValueV != null ? newValueV.getClass().getSimpleName() : "null");
+					return InterpretResult.RUNTIME_ERROR;
+				}
+
+				// test for number and convert to string, otherwise get stringvalue's value
+				// .toString is avoided so that doubles are rounded
+				String newValue = Optional.ofNullable(checkType(newValueV, LongValue.class, false)).map(l -> Long.toString(l.value)).orElseGet(() -> ((StringValue)newValueV).value);
+
+				push(new LongValue(bsv.modifyProperty(propertyNameValue.value, newValue) ? 0L : 1L));
 				return InterpretResult.CONTINUE;
 			}
 
@@ -1300,7 +1208,7 @@ public class VM {
 	}
 
 	private Value peek(int offset) {
-		if (stackTop - offset - 1 < 0) {
+		if (stackTop - offset - 1 < 0 || stackTop - offset - 1 >= stack.length) {
 			return null;
 		}
 		else {
@@ -1308,30 +1216,23 @@ public class VM {
 		}
 	}
 
-	private Optional<Double> asDouble(Value value) {
-		if (value instanceof DoubleValue) {
-			return Optional.of(((DoubleValue)value).value);
-		}
-		else if (value instanceof LongValue) {
-			return Optional.of((double)((LongValue)value).value);
+	private <T extends Value> T checkType(Value value, Class<T> clazz) {
+		return checkType(value, clazz, true);
+	}
+
+	private <T extends Value> T checkType(Value value, Class<T> clazz, boolean log) {
+		if (clazz.isInstance(value)) {
+			return clazz.cast(value);
 		}
 		else {
-			writeLog("Expected value to be of type DoubleValue or LongValue, but got type '%s'", value != null ? value.getClass().getSimpleName() : null);
-			return Optional.empty();
+			if (log) {
+				writeLog("Expected type %s, got %s instead.", clazz.getSimpleName(), value != null ? value.getClass().getSimpleName() : "null");
+			}
+			return null;
 		}
 	}
 
 	private void writeLog(String message, Object... objects) {
 		log.append(String.format(message, objects) + "\n");
-	}
-
-	private static <T extends Comparable<T>> Optional<BlockState> parseValue(BlockState state, Property<T> property, String value) {
-		Optional<T> optional = property.parseValue(value);
-		if (optional.isPresent()) {
-			return Optional.of(state.with(property, optional.get()));
-		}
-		else {
-			return Optional.empty();
-		}
 	}
 }

@@ -343,14 +343,16 @@ public class Compiler {
 				case OpCode.SPAWN_ENTITY:
 				case OpCode.ADD_MOTION:
 				case OpCode.CREATE_EXPLOSION:
-				case OpCode.MOVE_BLOCK:
 				case OpCode.PAUSE:
 				case OpCode.MODIFY_ENTITY_NBT:
+				case OpCode.GET_BLOCK:
 				case OpCode.SET_BLOCK:
-				case OpCode.SET_BLOCK_STATE:
 				case OpCode.NEW_NBT:
 				case OpCode.NBT_GET:
 				case OpCode.NBT_SET:
+				case OpCode.DEFAULT_BLOCK_STATE:
+				case OpCode.BLOCK_STATE_GET:
+				case OpCode.BLOCK_STATE_SET:
 					chunk.write(op);
 					reset();
 					break;

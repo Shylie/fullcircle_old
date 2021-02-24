@@ -219,17 +219,17 @@ public class Chunk {
 			case OpCode.CREATE_EXPLOSION:
 				return simpleInstruction(log, "OP_CREATE_EXPLOSION", offset);
 
-			case OpCode.MOVE_BLOCK:
-				return simpleInstruction(log, "OP_MOVE_BLOCK", offset);
-
 			case OpCode.MODIFY_ENTITY_NBT:
 				return simpleInstruction(log, "OP_MODIFY_ENTITY_NBT", offset);
 
+			case OpCode.DEFAULT_BLOCK_STATE:
+				return simpleInstruction(log, "OP_DEFAULT_BLOCK_STATE", offset);
+
+			case OpCode.GET_BLOCK:
+				return simpleInstruction(log, "OP_GET_BLOCK", offset);
+
 			case OpCode.SET_BLOCK:
 				return simpleInstruction(log, "OP_SET_BLOCK", offset);
-
-			case OpCode.SET_BLOCK_STATE:
-				return simpleInstruction(log, "OP_SET_BLOCK_STATE", offset);
 
 			case OpCode.PAUSE:
 				return simpleInstruction(log, "OP_PAUSE", offset);
@@ -242,6 +242,12 @@ public class Chunk {
 
 			case OpCode.NBT_SET:
 				return simpleInstruction(log, "OP_NBT_SET", offset);
+
+			case OpCode.BLOCK_STATE_GET:
+				return simpleInstruction(log, "OP_BLOCK_STATE_GET", offset);
+
+			case OpCode.BLOCK_STATE_SET:
+				return simpleInstruction(log, "OP_BLOCK_STATE_SET", offset);
 
 			default:
 				writeLog(log, "Unknown opcode '%04d'", instruction);

@@ -3,6 +3,8 @@ package com.github.shylie.fullcircle.net;
 import java.util.function.Supplier;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
@@ -47,7 +49,11 @@ public class MessageAdditiveMotion {
 		return new DistExecutor.SafeRunnable() {
 			@Override
 			public void run() {
-				Minecraft.getInstance().world.getEntityByID(eid).addVelocity(dx, dy, dz);
+				Entity e = Minecraft.getInstance().world.getEntityByID(eid);
+				e.addVelocity(dx, dy, dz);
+				if (e instanceof PlayerEntity) {
+					((PlayerEntity)e).velocityChanged = true;
+				}
 			}
 		};
 	}

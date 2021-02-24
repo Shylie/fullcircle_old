@@ -6,7 +6,9 @@ public class NBTValue implements Value {
 	public final CompoundNBT value;
 
 	public NBTValue(CompoundNBT value) {
-		this.value = value.copy(); // init with copy to prevent duplicate references
+		// init with copy to prevent duplicate references.
+		// unsure if this should be in dup() instead.
+		this.value = value.copy();
 	}
 
 	@Override
@@ -27,16 +29,6 @@ public class NBTValue implements Value {
 	@Override
 	public Value div(Value other) {
 		return null;
-	}
-
-	@Override
-	public Value cmp(Value other) {
-		if (equals(other)) {
-			return new LongValue(0);
-		}
-		else {
-			return new LongValue(1);
-		}
 	}
 
 	@Override

@@ -21,11 +21,11 @@ public class OpCode {
 	public static final int DIVIDE = 8;
 	/** Green, Orange | ..., NumberValue (6) -&gt; ..., NumberValue (3) */
 	public static final int DIVIDE_3 = 9;
-	/** Brown, Green | ..., Value -&gt; ..., Value (2) */
+	/** Brown, Green | ..., Value [Any] -&gt; ..., Value [Any] (2) */
 	public static final int DUPLICATE = 10;
-	/** Brown, Brown | ..., Value (3) -&gt; ..., Value (6) */
+	/** Brown, Brown | ..., Value [Any] (3) -&gt; ..., Value [Any] (6) */
 	public static final int DUPLICATE_3 = 11;
-	/** Brown, Blue | ..., Value (2) -&gt; ..., NumberValue */
+	/** Brown, Blue | ..., Value [Any] (2) -&gt; ..., NumberValue */
 	public static final int COMPARE = 12;
 	/** Brown, Purple | ..., NumberValue (2) -&gt; ..., NumberValue */
 	public static final int POW = 13;
@@ -39,7 +39,7 @@ public class OpCode {
 	public static final int MOD = 17;
 	/** Brown, Light Blue | ..., NumberValue -&gt; ..., NumberValue */
 	public static final int TRUNCATE = 18;
-	/** Brown, Orange | ..., Value -&gt; ... */
+	/** Brown, Orange | ..., Value [Any] -&gt; ... */
 	public static final int POP = 19;
 
 	/** Blue, Green | ..., NumberValue (6) -&gt; ..., NumberValue (4) */
@@ -53,7 +53,7 @@ public class OpCode {
 	public static final int ENTITY_EYE_POS = 31;
 	/** Purple, Blue | ..., EntityValue -&gt; ..., NumberValue (3) */
 	public static final int ENTITY_LOOK = 32;
-	/** Purple, Purple | ..., EntityValue -&gt; ..., EntityValue */
+	/** Purple, Purple | ..., EntityValue -&gt; ..., EntityValue, NumberValue */
 	public static final int ENTITY_LOOKED_AT = 33;
 	/** Purple, Cyan | ..., EntityValue -&gt; ..., NBTValue */
 	public static final int ENTITY_NBT = 34;
@@ -69,21 +69,26 @@ public class OpCode {
 	public static final int SPAWN_ENTITY = 52;
 	/** Light Gray, Purple | ..., NumberValue (4) -&gt; ... */
 	public static final int CREATE_EXPLOSION = 53;
-	/** Light Gray, Cyan | ..., NumberValue (6) -&gt; ... */
-	public static final int MOVE_BLOCK = 54;
-	/** Light Gray, Light Gray | ..., EntityValue, NBTValue -&gt; ... */
-	public static final int MODIFY_ENTITY_NBT = 55;
-	/** Light Gray, Gray | ..., NumberValue (3), StringValue (2) -&gt; ... */
+	/** Light Gray, Cyan | ..., EntityValue, NBTValue -&gt; ... */
+	public static final int MODIFY_ENTITY_NBT = 54;
+	/** Light Gray, Light Gray | ..., NumberValue (3) -&gt; ..., BlockStateValue */
+	public static final int GET_BLOCK = 55;
+	/** Light Gray, Gray | ..., NumberValue (3), BlockStateValue -&gt; ..., NumberValue */
 	public static final int SET_BLOCK = 56;
-	/** Light Gray, Yellow | ..., NumberValue (3), StringValue (2) -&gt; ... */
-	public static final int SET_BLOCK_STATE = 57;
 
 	/** Gray, Green | ... -&gt; ..., NBTValue */
 	public static final int NEW_NBT = 60;
-	/** Gray, Brown | ..., NBTValue, StringValue -&gt; ..., Value */
+	/** Gray, Brown | ..., NBTValue, StringValue, StringValue -&gt; ..., Value [String|Long|Double|NBT] */
 	public static final int NBT_GET = 61;
-	/** Gray, Blue | ..., NBTValue, StringValue, StringValue, Value -&gt; ..., NBTValue */
+	/** Gray, Blue | ..., NBTValue, StringValue, StringValue, Value [String|Long|Double|NBT|Entity] -&gt; ..., NBTValue */
 	public static final int NBT_SET = 62;
+
+	/** Yellow, Green | ..., StringValue, StringValue -&gt; ..., BlockStateValue */
+	public static final int DEFAULT_BLOCK_STATE = 70;
+	/** Yellow, Brown | ..., BlockStateValue, StringValue -&gt; ..., Value [String|Long], NumberValue */
+	public static final int BLOCK_STATE_GET = 71;
+	/** Yellow, Blue | ..., BlockStateValue, StringValue, Value [String|Long] -&gt; ..., BlockStateValue, NumberValue */
+	public static final int BLOCK_STATE_SET = 72;
 
 	/** Orange, Green, Unknown, Unknown | ... -&gt; ..., NumberValue */
 	public static final int CONSTANT = 90;
@@ -95,15 +100,15 @@ public class OpCode {
 	/** Lime */
 	public static final int RETURN = 100;
 
-	/** White | ..., StringValue -&gt; ..., Value */
+	/** White | ..., StringValue -&gt; ..., Value [Any] */
 	public static final int LOAD = 101;
-	/** White, White | ..., StringValue -&gt; ..., Value (3) */
+	/** White, White | ..., StringValue -&gt; ..., Value [Any] (3) */
 	public static final int LOAD_3 = 102;
 	/** White, White, White | ..., StringValue -&gt; ... */
 	public static final int CALL = 103;
-	/** Black | ..., StringValue, Value -&gt; ... */
+	/** Black | ..., StringValue, Value [Any] -&gt; ... */
 	public static final int STORE = 104;
-	/** Black, Black | ..., StringValue, Value (3) -&gt; ... */
+	/** Black, Black | ..., StringValue, Value [Any] (3) -&gt; ... */
 	public static final int STORE_3 = 105;
 	/** Black, Black, Black, Red | ... -&gt; ... */
 	public static final int DEFINE = 106;
