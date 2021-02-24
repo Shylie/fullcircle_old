@@ -957,19 +957,20 @@ public class VM {
 			{
 				Value putv = pop();
 				StringValue putvtype = checkType(pop(), StringValue.class);
+				if (putvtype == null) { return InterpretResult.RUNTIME_ERROR; }
 				StringValue path = checkType(pop(), StringValue.class);
+				if (path == null) { return InterpretResult.RUNTIME_ERROR; }
 				NBTValue nbtv = checkType(peek(0), NBTValue.class);
+				if (nbtv == null) { return InterpretResult.RUNTIME_ERROR; }
 
 				if (putv instanceof BlockStateValue) {
 					writeLog("Cannot store block states in NBT");
 					return InterpretResult.RUNTIME_ERROR;
 				}
 
-				String puttype = ((StringValue)putvtype).value;
+				String[] splitPath = path.value.split("\\.");
 
-				String[] splitPath = ((StringValue)path).value.split("\\.");
-
-				CompoundNBT nbt = ((NBTValue)nbtv).value;
+				CompoundNBT nbt = nbtv.value;
 
 				for (int i = 0; i < splitPath.length - 1; i++) {
 					if (!nbt.contains(splitPath[i], 10)) {
@@ -979,7 +980,7 @@ public class VM {
 					nbt = nbt.getCompound(splitPath[i]);
 				}
 
-				switch (puttype.toLowerCase()) {
+				switch (putvtype.value.toLowerCase()) {
 					case "byte":
 						if (putv instanceof LongValue) {
 							nbt.putByte(splitPath[splitPath.length - 1], (byte)((LongValue)putv).value);
