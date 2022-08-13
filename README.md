@@ -3,6 +3,6 @@ A minecraft spell-casting mod inspired by Vazkii's [Psi](https://psi.vazkii.net/
 
 
 ### Summon lightning at the caster's position
-<img src="https://raw.githubusercontent.com/Shylie/fullcircle/master/simple-spell.png" width="350"></img>
+<img src="https://github.com/Shylie/fullcircle_old/blob/master/simple-spell.png?raw=true" width="350"></img>
 
 <sup>Note: Red glazed terracotta closest to the lime glazed terracotta is labeled <i>minecraft</i>, the other is labeled <i>lightning_bolt</i>. This is done using a piece of named paper.</sup>
